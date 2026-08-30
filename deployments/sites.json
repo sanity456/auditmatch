@@ -5,5 +5,7 @@
   "url": "https://auditmatch.blazekingsley2.chatgpt.site",
   "access": "public",
   "contractNetwork": "GenLayer StudioNet",
-  "contractAddress": "0x6C651233ef4c6fC5476cC18Aa80cEEAD33b84D95"
+  "release": "v2-atomic",
+  "contractAddress": "0xD0f429d3Ca60Db86C6bf6d82E4Da286a0E498ac2",
+  "legacyContractAddress": "0x6C651233ef4c6fC5476cC18Aa80cEEAD33b84D95"
 }

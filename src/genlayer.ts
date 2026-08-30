@@ -248,36 +248,35 @@ export type NewBriefInput = {
   criteria: Criterion[];
 };
 
+type BriefWriter = (
+  wallet: WalletState,
+  functionName: string,
+  args: CalldataEncodable[],
+) => Promise<Hash>;
+
 export async function createBriefLive(
   wallet: WalletState,
   input: NewBriefInput,
   onProgress: (message: string) => void,
+  submit: BriefWriter = write,
 ): Promise<string> {
   const key = input.key.trim().toUpperCase();
-  onProgress("Creating the audit brief…");
-  await write(wallet, "create_brief", [
+  const criteriaJson = JSON.stringify(input.criteria.map((criterion) => ({
+    key: criterion.key,
+    text: criterion.text,
+    required: criterion.required,
+  })));
+  onProgress("Publishing the brief and freezing every criterion in one transaction…");
+  await submit(wallet, "create_brief_with_criteria", [
     key,
     input.projectName,
     input.title,
     input.auditScope,
     input.engagementTerms,
     BigInt(input.validityDays * 86_400),
+    criteriaJson,
   ]);
-  const briefId = `${wallet.address.toLowerCase()}:${key}`;
-  for (let index = 0; index < input.criteria.length; index += 1) {
-    const criterion = input.criteria[index];
-    onProgress(`Freezing criterion ${index + 1} of ${input.criteria.length}…`);
-    await write(wallet, "add_criterion", [
-      briefId,
-      criterion.key,
-      criterion.text,
-      criterion.required,
-    ]);
-  }
-  onProgress("Opening the brief to auditor applications…");
-  await write(wallet, "open_brief", [briefId]);
-  await read("get_brief", [briefId]);
-  return briefId;
+  return `${wallet.address.toLowerCase()}:${key}`;
 }
 
 export async function submitApplicationLive(

@@ -16,11 +16,11 @@ Contract: `contracts/audit_match.py`
 
 Constructor: `[1]`
 
-StudioNet contract: `0x6C651233ef4c6fC5476cC18Aa80cEEAD33b84D95`
+StudioNet atomic v2 contract: `0xD0f429d3Ca60Db86C6bf6d82E4Da286a0E498ac2`
 
-Deployment transaction: `0x188197e1cf04c4d35590f0c983d9c3b54509a0c982dd5c3109c11953f526ed5f`
+Deployment transaction: `0x9d2b0a398f37a96d859fb93e69907dab8111d82b26e6227231d6103c8ba8516b`
 
-Verified through August 30, 2026: finalized deployment with execution `SUCCESS`, matching source and 24-method schema, a complete native StudioNet workflow, and final read-only browser verification. The successful run passed 18 transaction checks and 6 read/state groups: real public-evidence assessment (`MM`, 9000 BPS, two domains, three agreeing validators), deterministic policy pass/rejection, recheck and supersession, contest resolution with live counter-evidence, final selection, and repeat-selection rejection. After a user-assisted localhost refresh, the UI rendered the matched selection and returned `Policy satisfied` with no browser warnings or errors. The registry contains clearly labeled test-only records, not real auditor endorsements. Wallet-extension signing was not exercised. See `E2E-REPORT.md` and `deployments/studionet.json`.
+Verified through August 30, 2026: atomic v2 finalized with execution `SUCCESS`, matching source and all 25 methods. `create_brief_with_criteria` creates the brief, freezes all ordered criteria, and opens applications in one wallet approval. Twelve direct tests cover success, validation, no-partial-state rollback, and legacy compatibility; a five-validator GLSim workflow passed; and one live zero-value StudioNet transaction created an `OPEN` brief with four ordered required criteria and three agreeing validators. The original v1 release remains at `0x6C651233ef4c6fC5476cC18Aa80cEEAD33b84D95` with its complete 18-transaction native workflow and MetaMask QA preserved as historical evidence. Every registry record used for verification is clearly labeled test-only, not a real auditor endorsement. See `E2E-REPORT.md`, `deployments/studionet.json`, and `deployments/studionet-v1.json`.
 
 Frontend: [publicly hosted](https://auditmatch.blazekingsley2.chatgpt.site), configured for the verified StudioNet contract, and also available locally with `npm run dev`.
 

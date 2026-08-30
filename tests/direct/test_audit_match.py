@@ -11,42 +11,42 @@ PROMPT = "Assess whether one security auditor fits one project audit brief"
 VALIDITY = 30 * 24 * 60 * 60
 
 
+def _brief_criteria():
+    return [
+        {
+            "key": "SOLIDITY",
+            "text": "Public evidence shows recent hands-on Solidity smart contract security work.",
+            "required": True,
+        },
+        {
+            "key": "BRIDGES",
+            "text": "Public evidence shows prior review of bridge, messaging, or validator-quorum risk.",
+            "required": True,
+        },
+        {
+            "key": "REPORTS",
+            "text": "At least one public report demonstrates clear findings and remediation verification.",
+            "required": True,
+        },
+        {
+            "key": "INDEPENDENCE",
+            "text": "The disclosure and public evidence reveal no material conflict with SeaGlass Protocol.",
+            "required": True,
+        },
+    ]
+
+
 def _open_brief(contract, direct_vm, project):
     direct_vm.sender = project
-    brief_id = contract.create_brief(
+    return contract.create_brief_with_criteria(
         "BRIDGE-V2",
         "SeaGlass Protocol",
         "Cross-chain bridge v2 security audit",
         "Review the Solidity bridge, validator quorum, relayer paths, upgrade controls, and invariant tests before the v2 mainnet release.",
         "Evidence must be public and current. The auditor must disclose conflicts, show relevant bridge work, and be able to begin within the stated review window.",
         VALIDITY,
+        json.dumps(_brief_criteria()),
     )
-    contract.add_criterion(
-        brief_id,
-        "SOLIDITY",
-        "Public evidence shows recent hands-on Solidity smart contract security work.",
-        True,
-    )
-    contract.add_criterion(
-        brief_id,
-        "BRIDGES",
-        "Public evidence shows prior review of bridge, messaging, or validator-quorum risk.",
-        True,
-    )
-    contract.add_criterion(
-        brief_id,
-        "REPORTS",
-        "At least one public report demonstrates clear findings and remediation verification.",
-        True,
-    )
-    contract.add_criterion(
-        brief_id,
-        "INDEPENDENCE",
-        "The disclosure and public evidence reveal no material conflict with SeaGlass Protocol.",
-        True,
-    )
-    contract.open_brief(brief_id)
-    return brief_id
 
 
 def _apply(contract, direct_vm, auditor, brief_id):
@@ -99,6 +99,81 @@ def _policy(**overrides):
     }
     value.update(overrides)
     return json.dumps(value)
+
+
+def test_atomic_publish_opens_brief_with_ordered_frozen_criteria(
+    contract, direct_vm, direct_alice
+):
+    brief_id = _open_brief(contract, direct_vm, direct_alice)
+    brief = contract.get_brief(brief_id)
+    assert brief["state"] == "OPEN"
+    assert brief["criterion_count"] == 4
+    assert contract.get_brief_count() == 1
+    assert [contract.get_criterion(brief_id, index)["criterion_key"] for index in range(4)] == [
+        "SOLIDITY",
+        "BRIDGES",
+        "REPORTS",
+        "INDEPENDENCE",
+    ]
+    with direct_vm.expect_revert("criteria_locked"):
+        contract.add_criterion(
+            brief_id,
+            "LATE",
+            "A criterion cannot be appended after the atomic publish has opened the brief.",
+            True,
+        )
+
+
+def test_atomic_publish_rejects_bad_criteria_without_partial_state(
+    contract, direct_vm, direct_alice
+):
+    direct_vm.sender = direct_alice
+    base = [
+        "ATOMIC-FAIL",
+        "Atomic Failure Test",
+        "Atomic publication validation exercise",
+        "This test confirms malformed atomic publication inputs never leave a partial draft record on-chain.",
+        "No payment or engagement exists; the attempted record is exclusively a deterministic validation test.",
+        VALIDITY,
+    ]
+    cases = [
+        ("not-json", "invalid_criteria_json"),
+        (json.dumps(_brief_criteria()[:1]), "invalid_criterion_count"),
+        (
+            json.dumps([_brief_criteria()[0], {**_brief_criteria()[1], "key": "SOLIDITY"}]),
+            "criterion_exists",
+        ),
+        (
+            json.dumps([_brief_criteria()[0], {**_brief_criteria()[1], "required": "yes"}]),
+            "invalid_criterion",
+        ),
+    ]
+    for criteria_json, reason in cases:
+        with direct_vm.expect_revert(reason):
+            contract.create_brief_with_criteria(*base, criteria_json)
+        assert contract.get_brief_count() == 0
+
+
+def test_legacy_draft_flow_remains_available(contract, direct_vm, direct_alice):
+    direct_vm.sender = direct_alice
+    brief_id = contract.create_brief(
+        "LEGACY-V1",
+        "Legacy Compatibility",
+        "Legacy draft workflow compatibility check",
+        "This test preserves support for integrations that still create a draft before adding frozen criteria.",
+        "No payment or engagement exists; this is a deterministic compatibility test for existing clients.",
+        VALIDITY,
+    )
+    for criterion in _brief_criteria()[:2]:
+        contract.add_criterion(
+            brief_id,
+            criterion["key"],
+            criterion["text"],
+            criterion["required"],
+        )
+    contract.open_brief(brief_id)
+    assert contract.get_brief(brief_id)["state"] == "OPEN"
+    assert contract.get_brief(brief_id)["criterion_count"] == 2
 
 
 def test_strong_match_can_be_selected_with_deterministic_policy(

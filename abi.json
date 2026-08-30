@@ -1,32 +1,398 @@
 {
   "ctor": {
-    "params": [["policy_version", "int"]],
+    "params": [
+      [
+        "policy_version",
+        "int"
+      ]
+    ],
     "kwparams": {}
   },
   "methods": {
-    "add_criterion": {"params": [["brief_id", "string"], ["criterion_key", "string"], ["criterion_text", "string"], ["required", "bool"]], "kwparams": {}, "readonly": false, "ret": "null", "payable": false},
-    "assess_application": {"params": [["application_id", "string"]], "kwparams": {}, "readonly": false, "ret": "string", "payable": false},
-    "contest_assessment": {"params": [["assessment_id", "string"], ["contest_reason", "string"], ["counter_sources_json", "string"]], "kwparams": {}, "readonly": false, "ret": "string", "payable": false},
-    "create_brief": {"params": [["brief_key", "string"], ["project_name", "string"], ["scope_title", "string"], ["audit_scope", "string"], ["engagement_terms", "string"], ["validity_seconds", "int"]], "kwparams": {}, "readonly": false, "ret": "string", "payable": false},
-    "evaluate_policy_view": {"params": [["application_id", "string"], ["policy_json", "string"], ["assessment_id", "string"]], "kwparams": {}, "readonly": true, "ret": {"$dict": "any"}},
-    "get_application": {"params": [["application_id", "string"]], "kwparams": {}, "readonly": true, "ret": {"$dict": "any"}},
-    "get_application_count": {"params": [], "kwparams": {}, "readonly": true, "ret": "int"},
-    "get_application_id": {"params": [["index", "int"]], "kwparams": {}, "readonly": true, "ret": "string"},
-    "get_assessment": {"params": [["assessment_id", "string"]], "kwparams": {}, "readonly": true, "ret": {"$dict": "any"}},
-    "get_assessment_count": {"params": [], "kwparams": {}, "readonly": true, "ret": "int"},
-    "get_assessment_id": {"params": [["index", "int"]], "kwparams": {}, "readonly": true, "ret": "string"},
-    "get_brief": {"params": [["brief_id", "string"]], "kwparams": {}, "readonly": true, "ret": {"$dict": "any"}},
-    "get_brief_application_id": {"params": [["brief_id", "string"], ["index", "int"]], "kwparams": {}, "readonly": true, "ret": "string"},
-    "get_brief_count": {"params": [], "kwparams": {}, "readonly": true, "ret": "int"},
-    "get_brief_id": {"params": [["index", "int"]], "kwparams": {}, "readonly": true, "ret": "string"},
-    "get_contest": {"params": [["contest_id", "string"]], "kwparams": {}, "readonly": true, "ret": {"$dict": "any"}},
-    "get_criterion": {"params": [["brief_id", "string"], ["index", "int"]], "kwparams": {}, "readonly": true, "ret": {"$dict": "any"}},
-    "get_protocol": {"params": [], "kwparams": {}, "readonly": true, "ret": {"$dict": "any"}},
-    "get_selection": {"params": [["selection_id", "string"]], "kwparams": {}, "readonly": true, "ret": {"$dict": "any"}},
-    "open_brief": {"params": [["brief_id", "string"]], "kwparams": {}, "readonly": false, "ret": "null", "payable": false},
-    "recheck_application": {"params": [["application_id", "string"]], "kwparams": {}, "readonly": false, "ret": "string", "payable": false},
-    "resolve_contest": {"params": [["contest_id", "string"]], "kwparams": {}, "readonly": false, "ret": "string", "payable": false},
-    "select_auditor": {"params": [["application_id", "string"], ["policy_json", "string"], ["assessment_id", "string"]], "kwparams": {}, "readonly": false, "ret": "string", "payable": false},
-    "submit_application": {"params": [["brief_id", "string"], ["auditor_name", "string"], ["profile_summary", "string"], ["conflict_disclosure", "string"], ["evidence_sources_json", "string"]], "kwparams": {}, "readonly": false, "ret": "string", "payable": false}
+    "add_criterion": {
+      "params": [
+        [
+          "brief_id",
+          "string"
+        ],
+        [
+          "criterion_key",
+          "string"
+        ],
+        [
+          "criterion_text",
+          "string"
+        ],
+        [
+          "required",
+          "bool"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "null",
+      "payable": false
+    },
+    "assess_application": {
+      "params": [
+        [
+          "application_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "string",
+      "payable": false
+    },
+    "contest_assessment": {
+      "params": [
+        [
+          "assessment_id",
+          "string"
+        ],
+        [
+          "contest_reason",
+          "string"
+        ],
+        [
+          "counter_sources_json",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "string",
+      "payable": false
+    },
+    "create_brief": {
+      "params": [
+        [
+          "brief_key",
+          "string"
+        ],
+        [
+          "project_name",
+          "string"
+        ],
+        [
+          "scope_title",
+          "string"
+        ],
+        [
+          "audit_scope",
+          "string"
+        ],
+        [
+          "engagement_terms",
+          "string"
+        ],
+        [
+          "validity_seconds",
+          "int"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "string",
+      "payable": false
+    },
+    "create_brief_with_criteria": {
+      "params": [
+        [
+          "brief_key",
+          "string"
+        ],
+        [
+          "project_name",
+          "string"
+        ],
+        [
+          "scope_title",
+          "string"
+        ],
+        [
+          "audit_scope",
+          "string"
+        ],
+        [
+          "engagement_terms",
+          "string"
+        ],
+        [
+          "validity_seconds",
+          "int"
+        ],
+        [
+          "criteria_json",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "string",
+      "payable": false
+    },
+    "evaluate_policy_view": {
+      "params": [
+        [
+          "application_id",
+          "string"
+        ],
+        [
+          "policy_json",
+          "string"
+        ],
+        [
+          "assessment_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": true,
+      "ret": {
+        "$dict": "any"
+      }
+    },
+    "get_application": {
+      "params": [
+        [
+          "application_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": true,
+      "ret": {
+        "$dict": "any"
+      }
+    },
+    "get_application_count": {
+      "params": [],
+      "kwparams": {},
+      "readonly": true,
+      "ret": "int"
+    },
+    "get_application_id": {
+      "params": [
+        [
+          "index",
+          "int"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": true,
+      "ret": "string"
+    },
+    "get_assessment": {
+      "params": [
+        [
+          "assessment_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": true,
+      "ret": {
+        "$dict": "any"
+      }
+    },
+    "get_assessment_count": {
+      "params": [],
+      "kwparams": {},
+      "readonly": true,
+      "ret": "int"
+    },
+    "get_assessment_id": {
+      "params": [
+        [
+          "index",
+          "int"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": true,
+      "ret": "string"
+    },
+    "get_brief": {
+      "params": [
+        [
+          "brief_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": true,
+      "ret": {
+        "$dict": "any"
+      }
+    },
+    "get_brief_application_id": {
+      "params": [
+        [
+          "brief_id",
+          "string"
+        ],
+        [
+          "index",
+          "int"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": true,
+      "ret": "string"
+    },
+    "get_brief_count": {
+      "params": [],
+      "kwparams": {},
+      "readonly": true,
+      "ret": "int"
+    },
+    "get_brief_id": {
+      "params": [
+        [
+          "index",
+          "int"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": true,
+      "ret": "string"
+    },
+    "get_contest": {
+      "params": [
+        [
+          "contest_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": true,
+      "ret": {
+        "$dict": "any"
+      }
+    },
+    "get_criterion": {
+      "params": [
+        [
+          "brief_id",
+          "string"
+        ],
+        [
+          "index",
+          "int"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": true,
+      "ret": {
+        "$dict": "any"
+      }
+    },
+    "get_protocol": {
+      "params": [],
+      "kwparams": {},
+      "readonly": true,
+      "ret": {
+        "$dict": "any"
+      }
+    },
+    "get_selection": {
+      "params": [
+        [
+          "selection_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": true,
+      "ret": {
+        "$dict": "any"
+      }
+    },
+    "open_brief": {
+      "params": [
+        [
+          "brief_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "null",
+      "payable": false
+    },
+    "recheck_application": {
+      "params": [
+        [
+          "application_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "string",
+      "payable": false
+    },
+    "resolve_contest": {
+      "params": [
+        [
+          "contest_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "string",
+      "payable": false
+    },
+    "select_auditor": {
+      "params": [
+        [
+          "application_id",
+          "string"
+        ],
+        [
+          "policy_json",
+          "string"
+        ],
+        [
+          "assessment_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "string",
+      "payable": false
+    },
+    "submit_application": {
+      "params": [
+        [
+          "brief_id",
+          "string"
+        ],
+        [
+          "auditor_name",
+          "string"
+        ],
+        [
+          "profile_summary",
+          "string"
+        ],
+        [
+          "conflict_disclosure",
+          "string"
+        ],
+        [
+          "evidence_sources_json",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "string",
+      "payable": false
+    }
   }
 }

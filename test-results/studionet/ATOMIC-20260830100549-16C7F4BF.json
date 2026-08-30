@@ -1,0 +1,23 @@
+{
+  "runId": "ATOMIC-20260830100549-16C7F4BF",
+  "verifiedAt": "2026-08-30T10:06:40.557Z",
+  "network": "studionet",
+  "chainId": 61999,
+  "contractAddress": "0xD0f429d3Ca60Db86C6bf6d82E4Da286a0E498ac2",
+  "transactionHash": "0xf5dbed97f253a023593317eb9c8280227828f6951b7323866241b46855c1f45a",
+  "status": "FINALIZED",
+  "executionResult": "SUCCESS",
+  "leaderOnly": false,
+  "agreeCount": 3,
+  "transferValue": "0",
+  "privateKeyPersisted": false,
+  "briefId": "0x711a82731dd421c1f821a9da99c6c04080f3a4bf:ATOMIC-20260830100549-16C7F4BF",
+  "briefState": "OPEN",
+  "criterionCount": 4,
+  "criterionKeys": [
+    "ATOMIC_COUNT",
+    "ORDER_PRESERVED",
+    "NO_PAYMENT",
+    "TEST_ONLY"
+  ]
+}

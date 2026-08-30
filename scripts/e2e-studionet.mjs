@@ -249,24 +249,28 @@ async function main() {
     "TEST ONLY: both role wallets are controlled by this test harness. No independent real-world auditor identity, business relationship, or actual audit engagement is asserted.",
     JSON.stringify(evidence),
   ];
-  await write(owner, "Create test brief", "create_brief", [
+  const criteria = [
+    {
+      key: "STATIC_REFERENCE",
+      text: "The submitted reference set includes public documentation explicitly describing Slither as a Solidity static-analysis framework with vulnerability detectors. This criterion concerns the submitted material, not candidate authorship or experience.",
+      required: true,
+    },
+    {
+      key: "REENTRANCY_REFERENCE",
+      text: "The submitted reference set includes official Solidity security documentation that explains reentrancy risk and the Checks-Effects-Interactions pattern. This criterion concerns the submitted material, not candidate authorship or experience.",
+      required: true,
+    },
+  ];
+  await write(owner, "Atomically publish test brief", "create_brief_with_criteria", [
     runId,
     `E2E TEST ONLY - AuditMatch ${runId.slice(-8)}`,
     "E2E TEST ONLY - public security reference review",
     "Non-production integration exercise: evaluate whether an applicant supplies the requested public security reference material. This brief tests source retrieval and policy plumbing; it is not a real audit, auditor qualification, or identity certification.",
     "No payment, token transfer, procurement, or real engagement. The frozen criteria assess the contents of submitted public references only. Candidate authorship, expertise, independence, availability, and past audit outcomes are not claimed or required by this test brief.",
     BigInt(validity),
-  ]);
-  await write(owner, "Add static-analysis reference criterion", "add_criterion", [
-    briefId, "STATIC_REFERENCE",
-    "The submitted reference set includes public documentation explicitly describing Slither as a Solidity static-analysis framework with vulnerability detectors. This criterion concerns the submitted material, not candidate authorship or experience.", true,
-  ]);
-  await write(owner, "Add reentrancy reference criterion", "add_criterion", [
-    briefId, "REENTRANCY_REFERENCE",
-    "The submitted reference set includes official Solidity security documentation that explains reentrancy risk and the Checks-Effects-Interactions pattern. This criterion concerns the submitted material, not candidate authorship or experience.", true,
+    JSON.stringify(criteria),
   ]);
   await write(auditor, "Reject non-owner criterion change", "add_criterion", [briefId, "UNAUTHORIZED", "This criterion must not be added by a non-owner wallet.", true], "only_project_owner");
-  await write(owner, "Open test brief", "open_brief", [briefId]);
   await write(owner, "Reject changes to frozen criteria", "add_criterion", [briefId, "LOCKED", "This criterion must not be added after the brief is open.", true], "criteria_locked");
   await write(owner, "Reject project self-application", "submit_application", applicationArgs, "project_cannot_self_apply");
   await write(auditor, "Submit test candidate with live evidence", "submit_application", applicationArgs);

@@ -7,6 +7,8 @@ AuditMatch is a non-custodial matching and evidence-adjudication prototype. It i
 - Concrete pinned GenVM runner dependency.
 - GenLayer storage types only.
 - Frozen criteria before applications.
+- Atomic create/freeze/open publication, preventing stranded partial drafts in the primary app flow.
+- Complete criteria validation before storage, including exact shape, bounds, uniqueness, order, and boolean flags.
 - Wallet-bound project and auditor roles.
 - Multi-domain HTTPS evidence requirement.
 - Bounded URL, text, source-count, and response sizes.

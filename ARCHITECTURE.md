@@ -6,6 +6,8 @@ Frontend responsibilities: discovery, wallet connection, preview data, form vali
 
 GenLayer contract responsibilities: freeze briefs and criteria, bind applications to wallets, fetch cited evidence during intelligent writes, reach consensus on the criterion vector, derive the verdict and decisiveness deterministically, preserve assessment history, resolve contests, evaluate selection policies, and record a policy-compliant selection.
 
+Brief publication is atomic. The frontend submits the brief plus an ordered JSON array of 2–8 criteria to `create_brief_with_criteria`. The contract validates the complete payload, rejects duplicate or malformed criteria before storage, and records the brief directly as `OPEN` in one transaction. The legacy draft/add/open methods remain available for older integrations, but the app no longer uses them.
+
 External source responsibilities: publish raw reports, profiles, disclosures, and other public evidence. A URL is a citation, not a trusted oracle; each validator refetches it.
 
 ## Intelligent transaction

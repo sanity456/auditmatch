@@ -2,7 +2,7 @@
 
 ## Fast checks
 
-Run GenVM lint before tests. `npm run verify` runs 18 frontend model/status checks, 10 receipt-safety checks, 15 StudioNet read regressions, 8 test-harness pacing/retry/timeout checks, 4 wallet-provider selection checks, and the production build. The Python direct suite covers input validation, roles, policy gating, history, expiry, and malformed model/source responses.
+Run GenVM lint before tests. `npm run verify` runs 18 frontend model/status checks, 10 receipt-safety checks, 15 StudioNet read regressions, 8 test-harness pacing/retry/timeout checks, 4 wallet-provider selection checks, the atomic one-write frontend regression, and the production build. The 12-test Python direct suite covers atomic validation and rollback safety, legacy compatibility, roles, policy gating, history, expiry, and malformed model/source responses.
 
 ```powershell
 genvm-lint check contracts/audit_match.py --json
@@ -10,7 +10,7 @@ pytest tests/direct -q
 npm run verify
 ```
 
-The existing GLSim integration test uses five mocked validators and mocked web/model responses. It is a deterministic consensus regression test, not proof of real external fetching.
+The GLSim integration test uses five mocked validators and mocked web/model responses. It exercises atomic publication through the complete assessment and selection workflow as a deterministic consensus regression; it is not proof of real external fetching.
 
 ## Real StudioNet workflow
 
@@ -26,6 +26,12 @@ To explicitly authorize permanent, clearly labeled test records on the deployed 
 npm run test:live -- --execute
 ```
 
+For the bounded atomic-release smoke, which submits exactly one permanent zero-value transaction and verifies the resulting `OPEN` brief and ordered criteria:
+
+```powershell
+npm run verify:atomic:live
+```
+
 This test uses the address recorded in `deployments/studionet.json`. It checks the network ID, local/on-chain source hash, complete method schema, and public-source availability before sending transactions. It never deploys a replacement contract, uses real assets, changes the CLI's active account/network, or sets mock responses or validator overrides.
 
 Two new ephemeral wallets represent the project and applicant. Their keys are generated in memory, never logged or saved, and never funded. A restricted EIP-1193-compatible provider signs only zero-value StudioNet consensus transactions. This exercises the same GenLayer SDK address/provider path as the app; it does not automate a real browser wallet extension's approval screen.
@@ -36,7 +42,7 @@ The brief and candidate are labeled `E2E TEST ONLY`. Both wallets belong to the 
 
 The planned workflow checks the following; it stops at the first unexpected failure. See `E2E-REPORT.md` for actually completed coverage and current blockers:
 
-1. Create a brief, add criteria, and open the brief.
+1. Atomically create the brief, freeze all criteria, and open applications in one transaction.
 2. Reject unauthorized edits, edits after criteria freeze, self-applications, and duplicate applications.
 3. Submit an application and run actual validator web/model assessment with full consensus.
 4. Evaluate a passing policy and a deliberately failing policy; reject unauthorized and policy-failing selection.
@@ -54,4 +60,4 @@ Generated reports are retained under `test-results/studionet/`, outside the `.ar
 
 ## Browser verification
 
-Use the deployed app's StudioNet mode to load the test brief, inspect its real evidence/assessment, and evaluate policy through the UI. The final `A3B71370` run was verified in the browser: the brief rendered as matched, its selection was bound to assessment 3, the default deterministic policy was satisfied, and the refreshed tab had no warnings or errors. Preview data remains separate. Wallet discovery selects MetaMask explicitly through EIP-6963 or the injected provider list and refuses Phantom or ambiguous providers; four regressions cover that boundary. The production version 4 connection was verified with user approval: MetaMask connected, StudioNet remained active, the shortened address replaced `Connect`, and no Phantom prompt opened. With separate action-time approval, the production app then completed the six zero-value writes needed to publish `MM-QA-20260830-A1`; a direct contract read confirmed state `OPEN` and all four required criteria. Rejection screens and account changes still require separate manual QA and action-time approval.
+Use the deployed app's StudioNet mode to load a test brief, inspect its real evidence/assessment, and evaluate policy through the UI. The v1 `A3B71370` run rendered as matched, bound selection to assessment 3, and satisfied the deterministic policy without browser warnings. Wallet discovery selects MetaMask explicitly through EIP-6963 or the injected provider list and refuses Phantom or ambiguous providers. The v1 MetaMask connection and six-write publication path passed with separate action-time approvals. Atomic v2 reduces that publication to one wallet prompt and has passed the live ephemeral-provider smoke; a final v2 MetaMask approval remains separate action-time QA. Rejection screens and account changes also remain manual QA.

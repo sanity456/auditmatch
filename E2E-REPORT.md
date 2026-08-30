@@ -2,7 +2,7 @@
 
 Date: August 30, 2026 (UTC); passing native run completed August 29
 
-Result: **PASS.** The native StudioNet workflow, read-only browser flow, live MetaMask connection, and production wallet write path all passed. The original receipt and policy-read defects are fixed, the full contract workflow passed with real sources and normal consensus, and the app rendered the resulting matched selection and deterministic policy decision without browser errors. The production connection selected MetaMask explicitly and did not open Phantom. A user-approved, test-only brief was then created and opened through six zero-value StudioNet contract writes.
+Result: **PASS.** Atomic v2 passes contract validation, frontend one-write regression, five-validator integration, exact StudioNet deployment verification, and a live one-transaction publish smoke. The original v1 release retains the complete real-source workflow, browser policy verification, MetaMask connection, and six-write wallet baseline as historical evidence. Atomic v2 replaces that six-write publication path with one zero-value transaction and cannot leave a partial draft through the primary app flow.
 
 ## Changes verified locally
 
@@ -11,28 +11,43 @@ Result: **PASS.** The native StudioNet workflow, read-only browser flow, live Me
 - The app, live test runner, and deployment verifier share the same read and receipt helpers.
 - Draft briefs now display Draft instead of Open, without changing contract rules.
 - App and test reads share pacing, a 45-second attempt timeout, and bounded retries only for recognized transient read errors. Writes never enter that queue and are never automatically resubmitted.
+- `create_brief_with_criteria` validates the entire criteria payload before storage, preserves order, commits the brief directly as `OPEN`, and retains the legacy draft methods for compatibility.
 
 ## Local verification
 
 | Check | Result |
 | --- | --- |
 | GenVM lint | Passed; concrete runner unchanged |
-| Direct contract tests | 9 passed |
+| Direct contract tests | 12 passed |
 | Frontend model and brief-state labels | 18 passed |
 | Receipt regressions | 10 passed |
 | StudioNet read regressions | 15 passed |
 | Read pacing/retry/timeout tests | 8 passed |
 | Wallet-provider selection tests | 4 passed |
+| Atomic frontend submission test | 1 passed; exactly one write |
+| Five-validator GLSim integration | 1 passed |
 | Typecheck and production build | Passed |
 
-Total: 64 local checks passed, plus lint and build.
+Total: 68 local checks passed, plus lint, five-validator integration, and build.
 
-## Live verification
+## Atomic v2 verification
+
+- Contract: `0xD0f429d3Ca60Db86C6bf6d82E4Da286a0E498ac2`.
+- Deployment transaction: `0x9d2b0a398f37a96d859fb93e69907dab8111d82b26e6227231d6103c8ba8516b`.
+- Source SHA-256: `b3d94efe1128b1c8840d210350ee0cc05b302195a9da40f73e6bf559f70dec18`.
+- Deployment: `FINALIZED`; leader execution `SUCCESS`; source and all 25 method signatures match locally.
+- Atomic smoke: `ATOMIC-20260830100549-16C7F4BF`.
+- Atomic transaction: `0xf5dbed97f253a023593317eb9c8280227828f6951b7323866241b46855c1f45a`.
+- Result: one zero-value, full-consensus transaction; leader execution `SUCCESS`; three validators agreed.
+- Final state: brief `OPEN`, four required criteria in submitted order: `ATOMIC_COUNT`, `ORDER_PRESERVED`, `NO_PAYMENT`, `TEST_ONLY`.
+- Test key was generated in memory and not persisted. The permanent record is labeled `E2E TEST ONLY`.
+
+## Legacy v1 full workflow and browser verification
 
 - Network: GenLayer StudioNet, chain ID `61999`.
 - Contract: `0x6C651233ef4c6fC5476cC18Aa80cEEAD33b84D95`.
 - Source SHA-256: `6514b063bceaf944ab891149b075273f18bcbdde2b2267ce235d6aced46be434`.
-- Source hash and all 24 method signatures match the deployed release. No contract changes or redeployment.
+- Source hash and all 24 method signatures match the archived v1 release.
 - Passing run: `E2E-20260829202905-A3B71370`.
 - Run artifact: `test-results/studionet/E2E-20260829202905-A3B71370.json`.
 - Native workflow result: **PASS — 18 transaction checks and 6 read/state groups**.
@@ -58,9 +73,9 @@ The browser confirmed that the previously failing policy query now passes and th
 ## Safety boundary and remaining coverage
 
 - Every persistent test brief and candidate is clearly labeled `E2E TEST ONLY`. The criteria concern submitted public reference material, not a real auditor's identity, authorship, expertise, independence, or availability.
-- Automated test keys exist only in memory. The production QA wallet remained inside MetaMask; no seed phrase or private key was exposed. The six approved writes had zero transfer value, and no token transfer or real procurement occurred.
+- Automated test keys exist only in memory. The production QA wallet remained inside MetaMask; no seed phrase or private key was exposed. Both the legacy six-write baseline and atomic v2 smoke had zero transfer value, and no token transfer or real procurement occurred.
 - Permanent test records are not deleted; earlier failed-run keys were not retained.
-- Actual browser wallet-extension connection, StudioNet readiness, transaction approvals, and the six-write brief publication path were exercised with MetaMask. Rejection screens and account changes remain untested and require separate action-time approval.
+- Actual browser wallet-extension connection, StudioNet readiness, transaction approvals, and the legacy six-write brief publication path were exercised with MetaMask. Atomic v2 has full live contract proof through the restricted ephemeral provider; its final MetaMask prompt remains separate action-time QA. Rejection screens and account changes also remain untested.
 - The frontend is publicly hosted at `https://auditmatch.blazekingsley2.chatgpt.site` and remains available locally at `http://127.0.0.1:5175/` for development.
 - The public RPC is rate-limited; avoid simultaneous or rapid registry refreshes. Production-scale indexing and wallet rejection/account-change QA remain separate release work.
 

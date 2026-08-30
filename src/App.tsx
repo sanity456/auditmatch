@@ -644,8 +644,8 @@ function PostBrief({busy, onSubmit}: {busy: boolean; onSubmit: (draft: NewBriefD
           <div className="form-section-number">03</div>
           <div className="form-section-body publish-row">
             <label>Assessment validity<select value={draft.validityDays} onChange={(event) => setDraft({...draft, validityDays: Number(event.target.value)})}><option value={14}>14 days</option><option value={30}>30 days</option><option value={60}>60 days</option><option value={90}>90 days</option></select></label>
-            <div><span className="preview-chip"><span /> Criteria lock on publish</span><p>Applications remain open until a policy-compliant auditor is selected.</p></div>
-            <button className="button button-primary" type="submit" disabled={busy}>{busy ? "Publishing…" : "Publish brief"}<Icon name="arrow" /></button>
+            <div><span className="preview-chip"><span /> Atomic publish · one approval</span><p>One transaction creates the brief, freezes every criterion, and opens applications.</p></div>
+            <button className="button button-primary" type="submit" disabled={busy}>{busy ? "Publishing…" : "Publish atomically"}<Icon name="arrow" /></button>
           </div>
         </div>
       </form>

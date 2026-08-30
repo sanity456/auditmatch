@@ -16,6 +16,7 @@ ERROR_LLM = "[LLM_ERROR]"
 VERDICTS = ("STRONG_MATCH", "POTENTIAL_MATCH", "NO_MATCH", "INDETERMINATE")
 CRITERION_CODES = "MPNU"
 MAX_CRITERIA = 8
+MAX_CRITERIA_JSON = 12_000
 MIN_SOURCES = 2
 MAX_SOURCES = 4
 MAX_COMBINED_SOURCES = 6
@@ -69,6 +70,40 @@ def _unpack(value: str, label: str) -> dict[str, Any]:
     if not isinstance(parsed, dict):
         _expected(f"invalid_{label}")
     return cast(dict[str, Any], parsed)
+
+
+def _criteria_input(value: str) -> list[dict[str, Any]]:
+    if len(value) > MAX_CRITERIA_JSON or not value.isascii():
+        _expected("invalid_criteria_json")
+    try:
+        parsed = json.loads(value)
+    except (TypeError, ValueError):
+        _expected("invalid_criteria_json")
+    if not isinstance(parsed, list) or not 2 <= len(parsed) <= MAX_CRITERIA:
+        _expected("invalid_criterion_count")
+
+    output: list[dict[str, Any]] = []
+    seen: list[str] = []
+    for item in parsed:
+        if not isinstance(item, dict) or sorted(item.keys()) != ["key", "required", "text"]:
+            _expected("invalid_criterion")
+        raw_key = item.get("key")
+        raw_text = item.get("text")
+        required = item.get("required")
+        if not isinstance(raw_key, str) or not isinstance(raw_text, str) or type(required) is not bool:
+            _expected("invalid_criterion")
+        key = _key(raw_key, "criterion_key")
+        if key in seen:
+            _expected("criterion_exists")
+        seen.append(key)
+        output.append(
+            {
+                "criterion_key": key,
+                "text": _text(raw_text, "criterion_text", 15, 1200),
+                "required": required,
+            }
+        )
+    return output
 
 
 def _sha(value: str) -> str:
@@ -329,6 +364,43 @@ class AuditMatch(gl.Contract):
             output.append(_unpack(self.criteria[f"{brief_id}:{criterion_id}"], "criterion"))
         return output
 
+    def _prepare_brief(
+        self,
+        brief_key: str,
+        project_name: str,
+        scope_title: str,
+        audit_scope: str,
+        engagement_terms: str,
+        validity_seconds: u256,
+    ) -> tuple[str, dict[str, Any]]:
+        key = _key(brief_key, "brief_key")
+        owner = self._sender()
+        validity = int(validity_seconds)
+        if validity < MIN_VALIDITY_SECONDS or validity > MAX_VALIDITY_SECONDS:
+            _expected("invalid_validity_seconds")
+        brief_id = f"{owner}:{key}"
+        if self.brief_exists.get(brief_id, False):
+            _expected("brief_exists")
+        return brief_id, {
+            "schema": "auditmatch/brief/v1",
+            "brief_id": brief_id,
+            "brief_key": key,
+            "project_owner": owner,
+            "project_name": _text(project_name, "project_name", 2, 120),
+            "scope_title": _text(scope_title, "scope_title", 5, 240),
+            "audit_scope": _text(audit_scope, "audit_scope", 40, 5000),
+            "engagement_terms": _text(engagement_terms, "engagement_terms", 40, 4000),
+            "validity_seconds": validity,
+            "state": "DRAFT",
+            "criterion_count": 0,
+            "application_count": 0,
+            "selected_application_id": "",
+            "selected_assessment_id": "",
+            "selected_auditor_wallet": "",
+            "selection_id": "",
+            "created_at_unix": _now_unix(),
+        }
+
     def _assess(
         self,
         brief: dict[str, Any],
@@ -549,36 +621,57 @@ AUDIT_MATCH_PACKET_END"""
         engagement_terms: str,
         validity_seconds: u256,
     ) -> str:
-        key = _key(brief_key, "brief_key")
-        owner = self._sender()
-        validity = int(validity_seconds)
-        if validity < MIN_VALIDITY_SECONDS or validity > MAX_VALIDITY_SECONDS:
-            _expected("invalid_validity_seconds")
-        brief_id = f"{owner}:{key}"
-        if self.brief_exists.get(brief_id, False):
-            _expected("brief_exists")
-        record = {
-            "schema": "auditmatch/brief/v1",
-            "brief_id": brief_id,
-            "brief_key": key,
-            "project_owner": owner,
-            "project_name": _text(project_name, "project_name", 2, 120),
-            "scope_title": _text(scope_title, "scope_title", 5, 240),
-            "audit_scope": _text(audit_scope, "audit_scope", 40, 5000),
-            "engagement_terms": _text(engagement_terms, "engagement_terms", 40, 4000),
-            "validity_seconds": validity,
-            "state": "DRAFT",
-            "criterion_count": 0,
-            "application_count": 0,
-            "selected_application_id": "",
-            "selected_assessment_id": "",
-            "selected_auditor_wallet": "",
-            "selection_id": "",
-            "created_at_unix": _now_unix(),
-        }
+        brief_id, record = self._prepare_brief(
+            brief_key,
+            project_name,
+            scope_title,
+            audit_scope,
+            engagement_terms,
+            validity_seconds,
+        )
         self.briefs[brief_id] = _pack(record)
         self.brief_exists[brief_id] = True
         self.brief_ids.append(brief_id)
+        return brief_id
+
+    @gl.public.write
+    def create_brief_with_criteria(
+        self,
+        brief_key: str,
+        project_name: str,
+        scope_title: str,
+        audit_scope: str,
+        engagement_terms: str,
+        validity_seconds: u256,
+        criteria_json: str,
+    ) -> str:
+        normalized_criteria = _criteria_input(criteria_json)
+        brief_id, record = self._prepare_brief(
+            brief_key,
+            project_name,
+            scope_title,
+            audit_scope,
+            engagement_terms,
+            validity_seconds,
+        )
+        record["state"] = "OPEN"
+        record["criterion_count"] = len(normalized_criteria)
+
+        self.briefs[brief_id] = _pack(record)
+        self.brief_exists[brief_id] = True
+        self.brief_ids.append(brief_id)
+        for position, criterion in enumerate(normalized_criteria):
+            key = str(criterion["criterion_key"])
+            self.criteria[f"{brief_id}:{key}"] = _pack(
+                {
+                    "schema": "auditmatch/criterion/v1",
+                    "criterion_key": key,
+                    "text": str(criterion["text"]),
+                    "required": bool(criterion["required"]),
+                    "position": position,
+                }
+            )
+            self.criterion_at[f"{brief_id}:{position}"] = key
         return brief_id
 
     @gl.public.write

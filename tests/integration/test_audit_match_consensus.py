@@ -69,7 +69,7 @@ def test_five_validators_assess_and_project_selects_auditor():
 
     brief_id = f"{str(project_account.address).lower()}:BRIDGE-V2"
     _ok(
-        project.create_brief(
+        project.create_brief_with_criteria(
             args=[
                 "BRIDGE-V2",
                 "SeaGlass Protocol",
@@ -77,17 +77,36 @@ def test_five_validators_assess_and_project_selects_auditor():
                 "Review the Solidity bridge, validator quorum, relayer paths, upgrade controls, and invariant tests before the v2 mainnet release.",
                 "Evidence must be public and current. The auditor must disclose conflicts, show relevant bridge work, and be available for the review window.",
                 VALIDITY,
+                json.dumps(
+                    [
+                        {
+                            "key": "SOLIDITY",
+                            "text": "Public evidence shows recent hands-on Solidity smart contract security work.",
+                            "required": True,
+                        },
+                        {
+                            "key": "BRIDGES",
+                            "text": "Public evidence shows prior review of bridge, messaging, or validator-quorum risk.",
+                            "required": True,
+                        },
+                        {
+                            "key": "REPORTS",
+                            "text": "At least one public report demonstrates clear findings and remediation verification.",
+                            "required": True,
+                        },
+                        {
+                            "key": "INDEPENDENCE",
+                            "text": "The disclosure and public evidence reveal no material conflict with SeaGlass Protocol.",
+                            "required": True,
+                        },
+                    ]
+                ),
             ]
         )
     )
-    for key, criterion in [
-        ("SOLIDITY", "Public evidence shows recent hands-on Solidity smart contract security work."),
-        ("BRIDGES", "Public evidence shows prior review of bridge, messaging, or validator-quorum risk."),
-        ("REPORTS", "At least one public report demonstrates clear findings and remediation verification."),
-        ("INDEPENDENCE", "The disclosure and public evidence reveal no material conflict with SeaGlass Protocol."),
-    ]:
-        _ok(project.add_criterion(args=[brief_id, key, criterion, True]))
-    _ok(project.open_brief(args=[brief_id]))
+    brief = project.get_brief(args=[brief_id]).call()
+    assert brief["state"] == "OPEN"
+    assert brief["criterion_count"] == 4
 
     auditor_wallet = str(auditor_account.address).lower()
     application_id = f"{brief_id}:APP:{auditor_wallet}"

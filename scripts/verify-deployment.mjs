@@ -39,7 +39,7 @@ const remoteSource = await client.getContractCode(deployment.contractAddress);
 assert.equal(sha256(remoteSource), deployment.sourceSha256, "On-chain source does not match the local contract");
 const schema = await client.getContractSchema(deployment.contractAddress);
 assert.deepEqual(schema, localSchema, "On-chain schema differs from abi.json");
-console.log("On-chain source hash and all 24 method signatures match the release");
+console.log(`On-chain source hash and all ${Object.keys(schema.methods).length} method signatures match the release`);
 
 const read = (functionName, args = []) =>
   readStudioContract(client, deployment.contractAddress, functionName, args);
