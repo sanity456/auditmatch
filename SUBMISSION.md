@@ -22,7 +22,7 @@ Deployment transaction: `0x188197e1cf04c4d35590f0c983d9c3b54509a0c982dd5c3109c11
 
 Verified through August 30, 2026: finalized deployment with execution `SUCCESS`, matching source and 24-method schema, a complete native StudioNet workflow, and final read-only browser verification. The successful run passed 18 transaction checks and 6 read/state groups: real public-evidence assessment (`MM`, 9000 BPS, two domains, three agreeing validators), deterministic policy pass/rejection, recheck and supersession, contest resolution with live counter-evidence, final selection, and repeat-selection rejection. After a user-assisted localhost refresh, the UI rendered the matched selection and returned `Policy satisfied` with no browser warnings or errors. The registry contains clearly labeled test-only records, not real auditor endorsements. Wallet-extension signing was not exercised. See `E2E-REPORT.md` and `deployments/studionet.json`.
 
-Frontend: configured for this contract and available locally with `npm run dev`; not yet publicly hosted.
+Frontend: [publicly hosted](https://auditmatch.blazekingsley2.chatgpt.site), configured for the verified StudioNet contract, and also available locally with `npm run dev`.
 
 Core read: `evaluate_policy_view(application_id, policy_json, assessment_id)`
 

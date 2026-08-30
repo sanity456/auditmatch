@@ -1,0 +1,9 @@
+{
+  "provider": "OpenAI Sites",
+  "projectId": "appgprj_6a93e57a47688191a59d4dd371804fa7",
+  "slug": "auditmatch",
+  "url": "https://auditmatch.blazekingsley2.chatgpt.site",
+  "access": "public",
+  "contractNetwork": "GenLayer StudioNet",
+  "contractAddress": "0x6C651233ef4c6fC5476cC18Aa80cEEAD33b84D95"
+}

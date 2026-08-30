@@ -2,6 +2,8 @@ import {defineConfig} from "vite";
 import type {Plugin} from "vite";
 import react from "@vitejs/plugin-react";
 import {sites} from "@openai/sites-vite-plugin";
+import {mkdir, readdir, rename} from "node:fs/promises";
+import {resolve} from "node:path";
 
 const cloudflareSpaWorker = (): Plugin => ({
   name: "auditmatch-cloudflare-spa-worker",
@@ -44,6 +46,16 @@ export default {
 };
 `,
     });
+  },
+  async closeBundle() {
+    const distDirectory = resolve("dist");
+    const clientDirectory = resolve(distDirectory, "client");
+    await mkdir(clientDirectory, {recursive: true});
+
+    for (const entry of await readdir(distDirectory)) {
+      if (entry === "client" || entry === "server" || entry === ".openai") continue;
+      await rename(resolve(distDirectory, entry), resolve(clientDirectory, entry));
+    }
   },
 });
 

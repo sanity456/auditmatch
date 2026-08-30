@@ -58,7 +58,7 @@ The browser confirmed that the previously failing policy query now passes and th
 - Test keys exist only in memory. No existing wallet keys or user funds were used. No token transfers or real procurement occurred.
 - Permanent test records are not deleted; earlier failed-run keys were not retained.
 - Actual browser wallet-extension connection, network switching, approval/rejection screens, and signing are not exercised by the ephemeral EIP-1193 test signer.
-- The frontend is local at `http://127.0.0.1:5175/`, not publicly hosted.
+- The frontend is publicly hosted at `https://auditmatch.blazekingsley2.chatgpt.site` and remains available locally at `http://127.0.0.1:5175/` for development.
 - The public RPC is rate-limited; avoid simultaneous or rapid registry refreshes. Production-scale indexing and wallet-extension QA remain separate release work.
 
 See `TESTING.md` for repeatable commands and source links. The original Studio parser diagnosis is cited in the archived failure report.
