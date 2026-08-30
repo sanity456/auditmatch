@@ -2,7 +2,7 @@
 
 ## Fast checks
 
-Run GenVM lint before tests. `npm run verify` runs 18 frontend model/status checks, 10 receipt-safety checks, 15 StudioNet read regressions, 8 test-harness pacing/retry/timeout checks, 4 wallet-provider selection checks, the atomic one-write frontend regression, and the production build. The 12-test Python direct suite covers atomic validation and rollback safety, legacy compatibility, roles, policy gating, history, expiry, and malformed model/source responses.
+Run GenVM lint before tests. `npm run verify` runs the frontend model/status checks, receipt-safety checks, StudioNet read regressions, pacing/retry/timeout checks, six wallet-provider and account-change checks, four release-hardening checks, the atomic one-write regression, and the production build. The 12-test Python direct suite covers atomic validation and rollback safety, legacy compatibility, roles, policy gating, history, expiry, and malformed model/source responses.
 
 ```powershell
 genvm-lint check contracts/audit_match.py --json
@@ -30,6 +30,12 @@ For the bounded atomic-release smoke, which submits exactly one permanent zero-v
 
 ```powershell
 npm run verify:atomic:live
+```
+
+The completed browser journey also has a read-only release gate. It verifies the finalized `VAULT-Q4` application, live assessment, strict-policy rejection, explicit test-policy pass, and confirmed owner selection without signing or sending a transaction:
+
+```powershell
+npm run verify:journey:live
 ```
 
 This test uses the address recorded in `deployments/studionet.json`. It checks the network ID, local/on-chain source hash, complete method schema, and public-source availability before sending transactions. It never deploys a replacement contract, uses real assets, changes the CLI's active account/network, or sets mock responses or validator overrides.
@@ -60,4 +66,4 @@ Generated reports are retained under `test-results/studionet/`, outside the `.ar
 
 ## Browser verification
 
-Use the deployed app's StudioNet mode to load a test brief, inspect its real evidence/assessment, and evaluate policy through the UI. The v1 `A3B71370` run rendered as matched, bound selection to assessment 3, and satisfied the deterministic policy without browser warnings. Wallet discovery selects MetaMask explicitly through EIP-6963 or the injected provider list and refuses Phantom or ambiguous providers. The v1 MetaMask connection and six-write publication path passed with separate action-time approvals. Atomic v2 reduces that publication to one wallet prompt; both the restricted-provider smoke and the final MetaMask path passed. Transaction `0xc1c964c88b3f93b443b027ce8c0a0aba72581ba1d93010a04ecfbf3f9a6e3cca` finalized successfully and direct reads confirmed `VAULT-Q4` is `OPEN` with four required criteria frozen in order. Rejection screens and account changes remain manual QA.
+Use the deployed app's StudioNet mode to load a test brief, inspect its real evidence/assessment, and evaluate policy through the UI. Wallet discovery selects MetaMask explicitly through EIP-6963 or the injected provider list and refuses Phantom or ambiguous providers. The hardened client listens for account and chain changes, labels the connected wallet's contextual role, distinguishes registry loading from writes, and retains submitted hashes through finality. The `VAULT-Q4` browser journey is now complete: its test-only applicant is `SELECTED`, the brief is `MATCHED`, the assessment is `INDETERMINATE` at 60% with two independent domains, the strict default policy rejects it, the explicit test policy passes, and the selection record is `CONFIRMED`. Selecting an indeterminate or negative result requires a separate acknowledgement in the interface and must not be presented as auditor certification.

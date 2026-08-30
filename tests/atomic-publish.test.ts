@@ -29,17 +29,19 @@ test("live brief publication submits one atomic contract write", async () => {
     ],
   };
 
-  const briefId = await createBriefLive(
+  const result = await createBriefLive(
     wallet,
     input,
     (message) => progress.push(message),
+    undefined,
     async (submittedWallet, functionName, args) => {
       calls.push({wallet: submittedWallet, functionName, args});
       return `0x${"1".repeat(64)}` as Hash;
     },
   );
 
-  assert.equal(briefId, `${wallet.address}:ATOMIC-QA`);
+  assert.equal(result.briefId, `${wallet.address}:ATOMIC-QA`);
+  assert.equal(result.hash, `0x${"1".repeat(64)}`);
   assert.equal(calls.length, 1);
   assert.equal(calls[0].wallet, wallet);
   assert.equal(calls[0].functionName, "create_brief_with_criteria");

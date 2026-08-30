@@ -1,5 +1,7 @@
 import type {EIP1193Provider} from "viem";
 
+import type {WalletState} from "./types";
+
 type ProviderMetadata = {
   isMetaMask?: boolean;
   isPhantom?: boolean;
@@ -17,6 +19,15 @@ export type AnnouncedWalletProvider = {
 type WalletWindow = Window & {
   ethereum?: EIP1193Provider & ProviderMetadata;
 };
+
+type ProviderListener = (value: unknown) => void;
+
+type EventedProvider = EIP1193Provider & {
+  on?: (event: "accountsChanged" | "chainChanged", listener: ProviderListener) => void;
+  removeListener?: (event: "accountsChanged" | "chainChanged", listener: ProviderListener) => void;
+};
+
+const ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/;
 
 function isEip1193Provider(value: unknown): value is EIP1193Provider {
   return Boolean(value && typeof value === "object" && typeof (value as {request?: unknown}).request === "function");
@@ -50,6 +61,45 @@ export function chooseMetaMaskProvider(
   if (injectedMetaMask) return injectedMetaMask;
 
   return injected && isMetaMask(injected) ? injected : undefined;
+}
+
+export function walletFromAccounts(value: unknown): WalletState | undefined {
+  const account = Array.isArray(value) ? value[0] : undefined;
+  return typeof account === "string" && ADDRESS_PATTERN.test(account)
+    ? {address: account as `0x${string}`}
+    : undefined;
+}
+
+export function numericChainId(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isSafeInteger(value)) return value;
+  if (typeof value !== "string" || !/^(0x[0-9a-f]+|\d+)$/i.test(value)) return undefined;
+  const parsed = Number.parseInt(value, value.toLowerCase().startsWith("0x") ? 16 : 10);
+  return Number.isSafeInteger(parsed) ? parsed : undefined;
+}
+
+export function watchWalletProvider(
+  provider: EIP1193Provider,
+  handlers: {
+    onAccountsChanged: (wallet: WalletState | undefined) => void;
+    onChainChanged: (chainId: number | undefined) => void;
+  },
+): () => void {
+  const evented = provider as EventedProvider;
+  if (typeof evented.on !== "function") return () => undefined;
+
+  const accountsChanged: ProviderListener = (accounts) => {
+    handlers.onAccountsChanged(walletFromAccounts(accounts));
+  };
+  const chainChanged: ProviderListener = (chainId) => {
+    handlers.onChainChanged(numericChainId(chainId));
+  };
+  evented.on("accountsChanged", accountsChanged);
+  evented.on("chainChanged", chainChanged);
+
+  return () => {
+    evented.removeListener?.("accountsChanged", accountsChanged);
+    evented.removeListener?.("chainChanged", chainChanged);
+  };
 }
 
 export async function requireMetaMaskProvider(): Promise<EIP1193Provider> {

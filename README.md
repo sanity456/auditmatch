@@ -17,6 +17,9 @@ Projects can select an auditor only when a deterministic policy read passes. The
 - Rechecks, counter-evidence contests, and immutable history.
 - One deterministic integration read: `evaluate_policy_view(application_id, policy_json, assessment_id)`.
 - Policy-gated, project-only auditor selection.
+- Automatic MetaMask account/chain change detection with contextual project-owner and applicant roles.
+- Persistent transaction lifecycle cards with hashes, finality state, and StudioNet explorer links.
+- Explicit exception acknowledgement before an `INDETERMINATE` or `NO_MATCH` assessment can be selected.
 - Responsive React app with an interactive no-write preview and lazy-loaded StudioNet support.
 
 ## Run the app
@@ -51,6 +54,12 @@ See `deployments/studionet.json` for the release record. Recheck it without a wa
 
 ```powershell
 npm run verify:deployment
+```
+
+Verify the exact completed application → assessment → policy → selection journey with finalized read-only calls:
+
+```powershell
+npm run verify:journey:live
 ```
 
 ## Verify

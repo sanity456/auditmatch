@@ -12,7 +12,11 @@ import {policyToContractJson} from "./model";
 import {createPacedReader} from "./read-queue";
 import {readStudioContract} from "./studio-read";
 import {assertSuccessfulStudioExecution} from "./transaction";
-import {requireMetaMaskProvider} from "./wallet-provider";
+import {
+  requireMetaMaskProvider,
+  walletFromAccounts,
+  watchWalletProvider,
+} from "./wallet-provider";
 import type {
   Application,
   Assessment,
@@ -23,8 +27,7 @@ import type {
   WalletState,
 } from "./types";
 
-const ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/;
-const STUDIONET_CHAIN_ID = 61_999;
+export const STUDIONET_CHAIN_ID = 61_999;
 const STUDIONET_CHAIN_HEX = `0x${STUDIONET_CHAIN_ID.toString(16)}` as `0x${string}`;
 const STUDIONET_RPC_URL = "https://studio.genlayer.com/api";
 const STUDIONET_EXPLORER_URL = "https://explorer-studio.genlayer.com";
@@ -81,8 +84,8 @@ function errorCode(cause: unknown): number | undefined {
 export async function connectWallet(): Promise<WalletState> {
   const provider = await requireMetaMaskProvider();
   const accounts = await provider.request({method: "eth_requestAccounts"});
-  const account = Array.isArray(accounts) ? accounts[0] : undefined;
-  if (typeof account !== "string" || !ADDRESS_PATTERN.test(account)) {
+  const wallet = walletFromAccounts(accounts);
+  if (!wallet) {
     throw new Error("The wallet did not return a valid account");
   }
   try {
@@ -108,7 +111,16 @@ export async function connectWallet(): Promise<WalletState> {
     });
   }
   activeWalletProvider = provider;
-  return {address: account as `0x${string}`};
+  return wallet;
+}
+
+export function subscribeActiveWallet(handlers: {
+  onAccountsChanged: (wallet: WalletState | undefined) => void;
+  onChainChanged: (chainId: number | undefined) => void;
+}): () => void {
+  return activeWalletProvider
+    ? watchWalletProvider(activeWalletProvider, handlers)
+    : () => undefined;
 }
 
 async function write(
@@ -252,14 +264,16 @@ type BriefWriter = (
   wallet: WalletState,
   functionName: string,
   args: CalldataEncodable[],
+  onSubmitted?: (hash: Hash, action: string) => void,
 ) => Promise<Hash>;
 
 export async function createBriefLive(
   wallet: WalletState,
   input: NewBriefInput,
   onProgress: (message: string) => void,
+  onSubmitted?: (hash: Hash, action: string) => void,
   submit: BriefWriter = write,
-): Promise<string> {
+): Promise<{briefId: string; hash: Hash}> {
   const key = input.key.trim().toUpperCase();
   const criteriaJson = JSON.stringify(input.criteria.map((criterion) => ({
     key: criterion.key,
@@ -267,7 +281,7 @@ export async function createBriefLive(
     required: criterion.required,
   })));
   onProgress("Publishing the brief and freezing every criterion in one transaction…");
-  await submit(wallet, "create_brief_with_criteria", [
+  const hash = await submit(wallet, "create_brief_with_criteria", [
     key,
     input.projectName,
     input.title,
@@ -275,8 +289,8 @@ export async function createBriefLive(
     input.engagementTerms,
     BigInt(input.validityDays * 86_400),
     criteriaJson,
-  ]);
-  return `${wallet.address.toLowerCase()}:${key}`;
+  ], onSubmitted);
+  return {briefId: `${wallet.address.toLowerCase()}:${key}`, hash};
 }
 
 export async function submitApplicationLive(
@@ -289,8 +303,8 @@ export async function submitApplicationLive(
     evidenceUrls: string[];
   },
   onSubmitted?: (hash: Hash, action: string) => void,
-): Promise<void> {
-  await write(
+): Promise<Hash> {
+  return write(
     wallet,
     "submit_application",
     [
@@ -308,16 +322,16 @@ export async function assessApplicationLive(
   wallet: WalletState,
   applicationId: string,
   onSubmitted?: (hash: Hash, action: string) => void,
-): Promise<void> {
-  await write(wallet, "assess_application", [applicationId], onSubmitted);
+): Promise<Hash> {
+  return write(wallet, "assess_application", [applicationId], onSubmitted);
 }
 
 export async function recheckApplicationLive(
   wallet: WalletState,
   applicationId: string,
   onSubmitted?: (hash: Hash, action: string) => void,
-): Promise<void> {
-  await write(wallet, "recheck_application", [applicationId], onSubmitted);
+): Promise<Hash> {
+  return write(wallet, "recheck_application", [applicationId], onSubmitted);
 }
 
 export async function evaluatePolicyLive(
@@ -351,8 +365,8 @@ export async function selectAuditorLive(
   policy: Policy,
   assessmentId: string,
   onSubmitted?: (hash: Hash, action: string) => void,
-): Promise<void> {
-  await write(
+): Promise<Hash> {
+  return write(
     wallet,
     "select_auditor",
     [applicationId, policyToContractJson(policy), assessmentId],

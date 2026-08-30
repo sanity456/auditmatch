@@ -14,6 +14,20 @@ import {
   shortAddress,
   verdictLabel,
 } from "./model";
+import {
+  STUDIONET_EXPLORER_URL,
+  activityCopy,
+  awaitingSignature,
+  policyAcceptsException,
+  requiresSelectionAcknowledgement,
+  transactionFailed,
+  transactionFinalized,
+  transactionSubmitted,
+  walletRole,
+  type AppActivity,
+  type TransactionActivity,
+  type WalletRole,
+} from "./release-state";
 import type {
   Application,
   Assessment,
@@ -58,6 +72,9 @@ const DEFAULT_POLICY: Policy = {
 
 const sleep = (milliseconds: number) =>
   new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
+
+const errorMessage = (cause: unknown, fallback: string) =>
+  cause instanceof Error ? cause.message : fallback;
 
 function Icon({name, size = 18}: {name: string; size?: number}) {
   const paths: Record<string, ReactNode> = {
@@ -141,7 +158,8 @@ function Header({
   page,
   mode,
   wallet,
-  busy,
+  role,
+  activity,
   onNavigate,
   onMode,
   onConnect,
@@ -149,11 +167,13 @@ function Header({
   page: Page;
   mode: Mode;
   wallet?: WalletState;
-  busy: boolean;
+  role: WalletRole;
+  activity: AppActivity;
   onNavigate: (page: Page) => void;
   onMode: (mode: Mode) => void;
   onConnect: () => void;
 }) {
+  const busy = activity !== "idle";
   const nav: Array<{id: Page; label: string}> = [
     {id: "marketplace", label: "Matches"},
     {id: "post", label: "Post a brief"},
@@ -199,15 +219,72 @@ function Header({
           </button>
         </div>
         {mode === "live" ? (
-          <button className="wallet-button" type="button" disabled={busy} onClick={onConnect}>
+          <button
+            className="wallet-button"
+            type="button"
+            aria-label={wallet ? `Connected wallet ${shortAddress(wallet.address)}. ${role}` : "Connect MetaMask"}
+            disabled={busy}
+            onClick={onConnect}
+          >
             <Icon name="wallet" />
-            {wallet ? shortAddress(wallet.address) : "Connect"}
+            {activity === "connecting-wallet" ? (
+              <span>Connecting…</span>
+            ) : wallet ? (
+              <span className="wallet-identity">
+                <strong>{shortAddress(wallet.address)}</strong>
+                <small>{role}</small>
+              </span>
+            ) : "Connect MetaMask"}
           </button>
         ) : (
           <span className="preview-chip"><span /> No chain writes</span>
         )}
       </div>
     </header>
+  );
+}
+
+function LiveActivityBar({activity}: {activity: AppActivity}) {
+  if (activity === "idle") return null;
+  return (
+    <div className="live-activity" role="status" aria-live="polite">
+      <span />
+      {activityCopy(activity)}
+    </div>
+  );
+}
+
+function TransactionTracker({
+  transaction,
+  onDismiss,
+}: {
+  transaction?: TransactionActivity;
+  onDismiss: () => void;
+}) {
+  if (!transaction) return null;
+  const statusCopy = {
+    AWAITING_SIGNATURE: "Confirm in MetaMask",
+    FINALIZING: "Submitted · waiting for StudioNet finality",
+    FINALIZED: "Finalized · execution succeeded",
+    FAILED: "Transaction not completed",
+  }[transaction.status];
+  return (
+    <aside className={`transaction-tracker transaction-${transaction.status.toLowerCase()}`} role="status" aria-live="polite">
+      <span className="transaction-pulse" />
+      <div>
+        <strong>{transaction.action}</strong>
+        <small>{statusCopy}</small>
+        {transaction.error && <p>{transaction.error}</p>}
+      </div>
+      {transaction.hash && (
+        <a href={`${STUDIONET_EXPLORER_URL}/tx/${transaction.hash}`} target="_blank" rel="noreferrer">
+          {shortAddress(transaction.hash, 10, 8)} <Icon name="arrow" size={14} />
+        </a>
+      )}
+      {(transaction.status === "FINALIZED" || transaction.status === "FAILED") && (
+        <button type="button" aria-label="Dismiss transaction status" onClick={onDismiss}><Icon name="close" size={15} /></button>
+      )}
+    </aside>
   );
 }
 
@@ -353,7 +430,7 @@ function CandidateList({
 function AssessmentPanel({
   brief,
   application,
-  busy,
+  activity,
   progress,
   onAssess,
   onRecheck,
@@ -361,12 +438,13 @@ function AssessmentPanel({
 }: {
   brief: Brief;
   application?: Application;
-  busy: boolean;
+  activity: AppActivity;
   progress: string;
   onAssess: () => void;
   onRecheck: () => void;
   onPolicy: () => void;
 }) {
+  const busy = activity !== "idle";
   if (!application) {
     return <EmptyState title="Choose a candidate" copy="Select an auditor application to inspect its evidence and fit assessment." />;
   }
@@ -401,8 +479,8 @@ function AssessmentPanel({
             </p>
           </div>
           <button className="button button-primary" type="button" disabled={busy} onClick={onAssess}>
-            {busy ? "Consensus running…" : "Run GenLayer match"}
-            {!busy && <Icon name="arrow" />}
+            {activity === "assessing" ? "Consensus running…" : "Run GenLayer match"}
+            {activity !== "assessing" && <Icon name="arrow" />}
           </button>
           {progress && <div className="progress-line" aria-live="polite"><span /> {progress}</div>}
         </div>
@@ -460,7 +538,7 @@ function AssessmentPanel({
               Test selection policy <Icon name="arrow" />
             </button>
             <button className="button button-ghost" type="button" disabled={busy} onClick={onRecheck}>
-              <Icon name="refresh" /> Recheck sources
+              <Icon name="refresh" /> {activity === "rechecking" ? "Rechecking…" : "Recheck sources"}
             </button>
           </div>
         </>
@@ -473,7 +551,7 @@ function Marketplace({
   briefs,
   selectedBriefId,
   selectedApplicationId,
-  busy,
+  activity,
   progress,
   onBrief,
   onApplication,
@@ -486,7 +564,7 @@ function Marketplace({
   briefs: Brief[];
   selectedBriefId: string;
   selectedApplicationId: string;
-  busy: boolean;
+  activity: AppActivity;
   progress: string;
   onBrief: (id: string) => void;
   onApplication: (id: string) => void;
@@ -550,7 +628,7 @@ function Marketplace({
                   <AssessmentPanel
                     brief={brief}
                     application={application}
-                    busy={busy}
+                    activity={activity}
                     progress={progress}
                     onAssess={onAssess}
                     onRecheck={onRecheck}
@@ -566,7 +644,8 @@ function Marketplace({
   );
 }
 
-function PostBrief({busy, onSubmit}: {busy: boolean; onSubmit: (draft: NewBriefDraft) => void}) {
+function PostBrief({activity, onSubmit}: {activity: AppActivity; onSubmit: (draft: NewBriefDraft) => void}) {
+  const busy = activity !== "idle";
   const [draft, setDraft] = useState<NewBriefDraft>({
     key: "VAULT-Q4",
     projectName: "Meridian Treasury",
@@ -645,7 +724,7 @@ function PostBrief({busy, onSubmit}: {busy: boolean; onSubmit: (draft: NewBriefD
           <div className="form-section-body publish-row">
             <label>Assessment validity<select value={draft.validityDays} onChange={(event) => setDraft({...draft, validityDays: Number(event.target.value)})}><option value={14}>14 days</option><option value={30}>30 days</option><option value={60}>60 days</option><option value={90}>90 days</option></select></label>
             <div><span className="preview-chip"><span /> Atomic publish · one approval</span><p>One transaction creates the brief, freezes every criterion, and opens applications.</p></div>
-            <button className="button button-primary" type="submit" disabled={busy}>{busy ? "Publishing…" : "Publish atomically"}<Icon name="arrow" /></button>
+            <button className="button button-primary" type="submit" disabled={busy}>{activity === "publishing-brief" ? "Publishing…" : "Publish atomically"}<Icon name="arrow" /></button>
           </div>
         </div>
       </form>
@@ -658,7 +737,7 @@ function PolicyLab({
   selectedApplicationId,
   policy,
   result,
-  busy,
+  activity,
   onApplication,
   onPolicy,
   onEvaluate,
@@ -668,14 +747,21 @@ function PolicyLab({
   selectedApplicationId: string;
   policy: Policy;
   result?: PolicyResult;
-  busy: boolean;
+  activity: AppActivity;
   onApplication: (id: string) => void;
   onPolicy: (policy: Policy) => void;
   onEvaluate: () => void;
   onSelect: () => void;
 }) {
+  const busy = activity !== "idle";
   const candidates = briefs.flatMap((brief) => brief.applications.map((application) => ({brief, application})));
   const selected = candidates.find(({application}) => application.id === selectedApplicationId) ?? candidates[0];
+  const selectedVerdict = selected?.application.assessment?.verdict;
+  const exceptionRequired = requiresSelectionAcknowledgement(selectedVerdict, policy);
+  const [exceptionAcknowledged, setExceptionAcknowledged] = useState(false);
+  useEffect(() => {
+    setExceptionAcknowledged(false);
+  }, [selected?.application.id, selected?.application.assessment?.id, policy.acceptedVerdicts.join(",")]);
   const toggleVerdict = (verdict: Verdict) => {
     const includes = policy.acceptedVerdicts.includes(verdict);
     const next = includes
@@ -705,6 +791,15 @@ function PolicyLab({
                 </label>
               ))}
             </div>
+            {policyAcceptsException(policy) && (
+              <div className="policy-warning" role="alert">
+                <Icon name="shield" />
+                <div>
+                  <strong>Exception policy enabled</strong>
+                  <p>Accepting an indeterminate or negative verdict tests workflow plumbing; it does not establish auditor fit or quality.</p>
+                </div>
+              </div>
+            )}
           </fieldset>
           <label className="range-label"><span>Minimum decisiveness <b>{formatConfidence(policy.minimumConfidenceBps)}</b></span><input type="range" min="5000" max="9500" step="125" value={policy.minimumConfidenceBps} onChange={(event) => onPolicy({...policy, minimumConfidenceBps: Number(event.target.value)})} /></label>
           <div className="form-grid two">
@@ -712,7 +807,7 @@ function PolicyLab({
             <label>Maximum assessment age<select value={policy.maximumAgeSeconds / 86_400} onChange={(event) => onPolicy({...policy, maximumAgeSeconds: Number(event.target.value) * 86_400})}><option value={7}>7 days</option><option value={14}>14 days</option><option value={30}>30 days</option><option value={60}>60 days</option></select></label>
           </div>
           <label className="switch-label"><input type="checkbox" checked={policy.requireLatest} onChange={(event) => onPolicy({...policy, requireLatest: event.target.checked})} /><span /><div><strong>Require latest assessment</strong><small>Reject valid but superseded history.</small></div></label>
-          <button className="button button-primary full" type="button" disabled={busy || !selected} onClick={onEvaluate}>{busy ? "Evaluating…" : "Evaluate policy"}<Icon name="arrow" /></button>
+          <button className="button button-primary full" type="button" disabled={busy || !selected} onClick={onEvaluate}>{activity === "evaluating-policy" ? "Evaluating…" : "Evaluate policy"}<Icon name="arrow" /></button>
         </section>
         <section className="policy-output" aria-live="polite">
           <div className="code-card"><div><span>Deterministic contract read</span><b>VIEW</b></div><code>evaluate_policy_view(<br />&nbsp;&nbsp;application_id,<br />&nbsp;&nbsp;policy_json,<br />&nbsp;&nbsp;assessment_id<br />)</code><small>No web fetch. No model call. Same inputs, same result.</small></div>
@@ -722,11 +817,17 @@ function PolicyLab({
             <div className={`policy-result ${result.satisfied ? "passed" : "failed"}`}>
               <div className="result-icon"><Icon name={result.satisfied ? "check" : "close"} size={28} /></div>
               <span>{result.satisfied ? "Policy satisfied" : "Policy not satisfied"}</span>
-              <h2>{result.satisfied ? "This assessment clears the gate." : `${result.failureReasons.length} condition${result.failureReasons.length === 1 ? "" : "s"} failed.`}</h2>
-              <p>{result.satisfied ? "The project can record this auditor selection without another subjective query." : "Tight policies fail explicitly and remain auditable."}</p>
+              <h2>{result.satisfied ? (exceptionRequired ? "This assessment clears an exception gate." : "This assessment clears the gate.") : `${result.failureReasons.length} condition${result.failureReasons.length === 1 ? "" : "s"} failed.`}</h2>
+              <p>{result.satisfied ? (exceptionRequired ? "Policy satisfaction confirms only that the configured exception rules passed—not auditor qualification." : "The project can record this auditor selection without another subjective query.") : "Tight policies fail explicitly and remain auditable."}</p>
               {result.failureReasons.length > 0 && <ul>{result.failureReasons.map((failure) => <li key={failure}>{failureLabel(failure)}</li>)}</ul>}
+              {result.satisfied && exceptionRequired && selected?.brief.state === "OPEN" && (
+                <label className="exception-acknowledgement">
+                  <input type="checkbox" checked={exceptionAcknowledged} onChange={(event) => setExceptionAcknowledged(event.target.checked)} />
+                  <span>I understand this records an inconclusive test or exception selection on-chain.</span>
+                </label>
+              )}
               {result.satisfied && selected?.brief.state === "OPEN" && (
-                <button className="button button-primary full" type="button" disabled={busy} onClick={onSelect}>Record auditor selection <Icon name="arrow" /></button>
+                <button className="button button-primary full" type="button" disabled={busy || (exceptionRequired && !exceptionAcknowledged)} onClick={onSelect}>{activity === "recording-selection" ? "Recording…" : exceptionRequired ? "Record exception selection" : "Record auditor selection"} <Icon name="arrow" /></button>
               )}
               {result.satisfied && selected?.brief.state === "MATCHED" && <StatusPill tone="positive">Selection already recorded</StatusPill>}
             </div>
@@ -771,15 +872,16 @@ function Expansion() {
 
 function ApplicationDialog({
   brief,
-  busy,
+  activity,
   onClose,
   onSubmit,
 }: {
   brief: Brief;
-  busy: boolean;
+  activity: AppActivity;
   onClose: () => void;
   onSubmit: (draft: ApplicationDraft) => void;
 }) {
+  const busy = activity !== "idle";
   const [draft, setDraft] = useState<ApplicationDraft>({
     auditorName: "Proofline Security",
     profileSummary: "Independent security researchers focused on Solidity protocol reviews, access-control design, and invariant testing.",
@@ -805,7 +907,7 @@ function ApplicationDialog({
             <label>Evidence URL 1<input required type="url" pattern="https://.*" value={draft.evidenceUrls[0]} onChange={(event) => setDraft({...draft, evidenceUrls: [event.target.value, draft.evidenceUrls[1]]})} /></label>
             <label>Evidence URL 2<input required type="url" pattern="https://.*" value={draft.evidenceUrls[1]} onChange={(event) => setDraft({...draft, evidenceUrls: [draft.evidenceUrls[0], event.target.value]})} /></label>
           </div>
-          <button className="button button-primary full" type="submit" disabled={busy}>{busy ? "Submitting…" : "Submit evidence application"}<Icon name="arrow" /></button>
+          <button className="button button-primary full" type="submit" disabled={busy}>{activity === "submitting-application" ? "Submitting…" : "Submit evidence application"}<Icon name="arrow" /></button>
         </form>
       </section>
     </div>
@@ -833,7 +935,8 @@ export default function App() {
   const [wallet, setWallet] = useState<WalletState>();
   const [policy, setPolicy] = useState<Policy>(DEFAULT_POLICY);
   const [policyResult, setPolicyResult] = useState<PolicyResult>();
-  const [busy, setBusy] = useState(false);
+  const [activity, setActivity] = useState<AppActivity>("idle");
+  const [transaction, setTransaction] = useState<TransactionActivity>();
   const [progress, setProgress] = useState("");
   const [toast, setToast] = useState("");
   const [showApply, setShowApply] = useState(false);
@@ -841,12 +944,55 @@ export default function App() {
   const selectedBrief = briefs.find((brief) => brief.id === selectedBriefId) ?? briefs[0];
   const selectedApplication = selectedBrief?.applications.find((item) => item.id === selectedApplicationId)
     ?? selectedBrief?.applications[0];
+  const busy = activity !== "idle";
+  const currentWalletRole = walletRole(wallet, selectedBrief);
 
   useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(""), 5_000);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    if (mode !== "live" || !wallet) return;
+    let disposed = false;
+    let unsubscribe: () => void = () => undefined;
+    void import("./genlayer").then(({STUDIONET_CHAIN_ID, subscribeActiveWallet}) => {
+      if (disposed) return;
+      unsubscribe = subscribeActiveWallet({
+        onAccountsChanged: (nextWallet) => {
+          setWallet(nextWallet);
+          setPolicyResult(undefined);
+          setToast(nextWallet
+            ? `MetaMask switched to ${shortAddress(nextWallet.address)}.`
+            : "MetaMask disconnected from AuditMatch.");
+        },
+        onChainChanged: (chainId) => {
+          if (chainId === STUDIONET_CHAIN_ID) return;
+          setWallet(undefined);
+          setPolicyResult(undefined);
+          setToast("MetaMask left GenLayer StudioNet. Reconnect before sending a transaction.");
+        },
+      });
+    });
+    return () => {
+      disposed = true;
+      unsubscribe();
+    };
+  }, [mode, wallet?.address]);
+
+  const beginTransaction = (action: string) => setTransaction(awaitingSignature(action));
+  const submittedTransaction = (hash: string) => {
+    setTransaction((current) => transactionSubmitted(current, hash));
+  };
+  const finalizedTransaction = (hash: string) => {
+    setTransaction((current) => transactionFinalized(current, hash));
+  };
+  const failedTransaction = (cause: unknown, fallback: string) => {
+    const message = errorMessage(cause, fallback);
+    setTransaction((current) => transactionFailed(current, message));
+    return message;
+  };
 
   const navigate = (next: Page) => {
     setPage(next);
@@ -870,35 +1016,36 @@ export default function App() {
       return;
     }
     setPolicyResult(undefined);
-    setBusy(true);
+    if (next === "preview") {
+      const demo = buildDemoBriefs();
+      setBriefs(demo);
+      setSelectedBriefId(demo[0]?.id ?? "");
+      setSelectedApplicationId(demo[0]?.applications.find((item) => !item.assessment)?.id ?? demo[0]?.applications[0]?.id ?? "");
+      setMode(next);
+      return;
+    }
+    setActivity("loading-registry");
     try {
-      if (next === "preview") {
-        const demo = buildDemoBriefs();
-        setBriefs(demo);
-        setSelectedBriefId(demo[0]?.id ?? "");
-        setSelectedApplicationId(demo[0]?.applications.find((item) => !item.assessment)?.id ?? demo[0]?.applications[0]?.id ?? "");
-      } else {
-        await refreshLive();
-      }
+      await refreshLive();
       setMode(next);
     } catch (cause) {
-      setToast(cause instanceof Error ? cause.message : "Could not load StudioNet registry.");
+      setToast(errorMessage(cause, "Could not load StudioNet registry."));
     } finally {
-      setBusy(false);
+      setActivity("idle");
     }
   };
 
   const connect = async () => {
-    setBusy(true);
+    setActivity("connecting-wallet");
     try {
       const {connectWallet} = await import("./genlayer");
       const connected = await connectWallet();
       setWallet(connected);
       setToast(`Connected ${shortAddress(connected.address)} to GenLayer StudioNet.`);
     } catch (cause) {
-      setToast(cause instanceof Error ? cause.message : "Wallet connection failed.");
+      setToast(errorMessage(cause, "Wallet connection failed."));
     } finally {
-      setBusy(false);
+      setActivity("idle");
     }
   };
 
@@ -924,7 +1071,7 @@ export default function App() {
 
   const assess = async () => {
     if (!selectedApplication || !selectedBrief) return;
-    setBusy(true);
+    setActivity("assessing");
     setPolicyResult(undefined);
     try {
       if (mode === "preview") {
@@ -955,23 +1102,25 @@ export default function App() {
       } else {
         const activeWallet = requireWallet();
         if (!activeWallet) return;
+        beginTransaction("GenLayer evidence assessment");
         setProgress("Waiting for validator consensus and finality…");
         const {assessApplicationLive} = await import("./genlayer");
-        await assessApplicationLive(activeWallet, selectedApplication.id);
+        const hash = await assessApplicationLive(activeWallet, selectedApplication.id, (submittedHash) => submittedTransaction(submittedHash));
+        finalizedTransaction(hash);
         await refreshLive(selectedBrief.id, selectedApplication.id);
         setToast("StudioNet finalized the fit assessment.");
       }
     } catch (cause) {
-      setToast(cause instanceof Error ? cause.message : "Assessment failed.");
+      setToast(mode === "live" ? failedTransaction(cause, "Assessment failed.") : errorMessage(cause, "Assessment failed."));
     } finally {
       setProgress("");
-      setBusy(false);
+      setActivity("idle");
     }
   };
 
   const recheck = async () => {
     if (!selectedApplication?.assessment || !selectedBrief) return;
-    setBusy(true);
+    setActivity("rechecking");
     try {
       if (mode === "preview") {
         setProgress("Refetching every cited source…");
@@ -984,22 +1133,24 @@ export default function App() {
       } else {
         const activeWallet = requireWallet();
         if (!activeWallet) return;
+        beginTransaction("Evidence source recheck");
         const {recheckApplicationLive} = await import("./genlayer");
-        await recheckApplicationLive(activeWallet, selectedApplication.id);
+        const hash = await recheckApplicationLive(activeWallet, selectedApplication.id, (submittedHash) => submittedTransaction(submittedHash));
+        finalizedTransaction(hash);
         await refreshLive(selectedBrief.id, selectedApplication.id);
         setToast("StudioNet finalized a fresh assessment.");
       }
     } catch (cause) {
-      setToast(cause instanceof Error ? cause.message : "Recheck failed.");
+      setToast(mode === "live" ? failedTransaction(cause, "Recheck failed.") : errorMessage(cause, "Recheck failed."));
     } finally {
       setProgress("");
-      setBusy(false);
+      setActivity("idle");
     }
   };
 
   const evaluate = async () => {
     if (!selectedApplication) return;
-    setBusy(true);
+    setActivity("evaluating-policy");
     try {
       const result = mode === "preview"
         ? evaluateLocalPolicy(selectedApplication, policy)
@@ -1011,9 +1162,9 @@ export default function App() {
       setPolicyResult(result);
       setToast(result.satisfied ? "Policy satisfied—selection is available." : "Policy returned explicit failure reasons.");
     } catch (cause) {
-      setToast(cause instanceof Error ? cause.message : "Policy evaluation failed.");
+      setToast(errorMessage(cause, "Policy evaluation failed."));
     } finally {
-      setBusy(false);
+      setActivity("idle");
     }
   };
 
@@ -1026,7 +1177,7 @@ export default function App() {
       setToast("Run a satisfied selection policy first.");
       return;
     }
-    setBusy(true);
+    setActivity("recording-selection");
     try {
       if (mode === "preview") {
         setBriefs((current) => current.map((brief) => brief.id === selectedBrief.id ? {
@@ -1041,21 +1192,33 @@ export default function App() {
       } else {
         const activeWallet = requireWallet();
         if (!activeWallet) return;
+        if (activeWallet.address.toLowerCase() !== selectedBrief.projectOwner.toLowerCase()) {
+          setToast(`Switch MetaMask to the project owner ${shortAddress(selectedBrief.projectOwner)} before recording a selection.`);
+          return;
+        }
+        beginTransaction("Auditor selection");
         const {selectAuditorLive} = await import("./genlayer");
-        await selectAuditorLive(activeWallet, selectedApplication.id, policy, selectedApplication.assessment.id);
+        const hash = await selectAuditorLive(
+          activeWallet,
+          selectedApplication.id,
+          policy,
+          selectedApplication.assessment.id,
+          (submittedHash) => submittedTransaction(submittedHash),
+        );
+        finalizedTransaction(hash);
         await refreshLive(selectedBrief.id, selectedApplication.id);
       }
       setToast(`Selection recorded: ${selectedApplication.auditorName}.`);
       navigate("marketplace");
     } catch (cause) {
-      setToast(cause instanceof Error ? cause.message : "Selection failed.");
+      setToast(mode === "live" ? failedTransaction(cause, "Selection failed.") : errorMessage(cause, "Selection failed."));
     } finally {
-      setBusy(false);
+      setActivity("idle");
     }
   };
 
   const postBrief = async (draft: NewBriefDraft) => {
-    setBusy(true);
+    setActivity("publishing-brief");
     try {
       if (mode === "preview") {
         const id = `${PREVIEW_PROJECT.toLowerCase()}:${draft.key.trim().toUpperCase()}`;
@@ -1081,23 +1244,30 @@ export default function App() {
       } else {
         const activeWallet = requireWallet();
         if (!activeWallet) return;
+        beginTransaction("Atomic brief publication");
         const {createBriefLive} = await import("./genlayer");
-        const id = await createBriefLive(activeWallet, draft, setProgress);
-        await refreshLive(id);
+        const {briefId, hash} = await createBriefLive(
+          activeWallet,
+          draft,
+          setProgress,
+          (submittedHash) => submittedTransaction(submittedHash),
+        );
+        finalizedTransaction(hash);
+        await refreshLive(briefId);
       }
       setToast("Brief published. Its fit criteria are now frozen.");
       navigate("marketplace");
     } catch (cause) {
-      setToast(cause instanceof Error ? cause.message : "Brief publishing failed.");
+      setToast(mode === "live" ? failedTransaction(cause, "Brief publishing failed.") : errorMessage(cause, "Brief publishing failed."));
     } finally {
       setProgress("");
-      setBusy(false);
+      setActivity("idle");
     }
   };
 
   const submitApplication = async (draft: ApplicationDraft) => {
     if (!selectedBrief) return;
-    setBusy(true);
+    setActivity("submitting-application");
     try {
       if (mode === "preview") {
         const id = `${selectedBrief.id}:APP:${PREVIEW_AUDITOR.toLowerCase()}`;
@@ -1116,29 +1286,42 @@ export default function App() {
       } else {
         const activeWallet = requireWallet();
         if (!activeWallet) return;
+        if (activeWallet.address.toLowerCase() === selectedBrief.projectOwner.toLowerCase()) {
+          setToast("The project owner cannot apply to their own brief. Switch MetaMask to an applicant wallet.");
+          return;
+        }
+        beginTransaction("Evidence application");
         const {submitApplicationLive} = await import("./genlayer");
-        await submitApplicationLive(activeWallet, selectedBrief.id, draft);
+        const hash = await submitApplicationLive(
+          activeWallet,
+          selectedBrief.id,
+          draft,
+          (submittedHash) => submittedTransaction(submittedHash),
+        );
+        finalizedTransaction(hash);
         await refreshLive(selectedBrief.id);
       }
       setShowApply(false);
       setToast("Application submitted. Public evidence is ready for consensus review.");
     } catch (cause) {
-      setToast(cause instanceof Error ? cause.message : "Application failed.");
+      setToast(mode === "live" ? failedTransaction(cause, "Application failed.") : errorMessage(cause, "Application failed."));
     } finally {
-      setBusy(false);
+      setActivity("idle");
     }
   };
 
   return (
     <div className="app">
-      <Header page={page} mode={mode} wallet={wallet} busy={busy} onNavigate={navigate} onMode={changeMode} onConnect={connect} />
-      {mode === "preview" && <div className="preview-banner"><strong>Interactive preview</strong><span>All actions below are simulated locally. No wallet prompt and no blockchain state change.</span></div>}
-      {page === "marketplace" && <Marketplace briefs={briefs} selectedBriefId={selectedBriefId} selectedApplicationId={selectedApplicationId} busy={busy} progress={progress} onBrief={selectBrief} onApplication={selectApplication} onAssess={assess} onRecheck={recheck} onPolicy={() => navigate("policy")} onApply={() => setShowApply(true)} onPost={() => navigate("post")} />}
-      {page === "post" && <PostBrief busy={busy} onSubmit={postBrief} />}
-      {page === "policy" && <PolicyLab briefs={briefs} selectedApplicationId={selectedApplicationId} policy={policy} result={policyResult} busy={busy} onApplication={selectApplication} onPolicy={(next) => {setPolicy(next); setPolicyResult(undefined);}} onEvaluate={evaluate} onSelect={recordSelection} />}
+      <Header page={page} mode={mode} wallet={wallet} role={currentWalletRole} activity={activity} onNavigate={navigate} onMode={changeMode} onConnect={connect} />
+      {mode === "preview" && activity !== "loading-registry" && <div className="preview-banner"><strong>Interactive preview</strong><span>All actions below are simulated locally. No wallet prompt and no blockchain state change.</span></div>}
+      {(mode === "live" || activity === "loading-registry") && <LiveActivityBar activity={activity} />}
+      {page === "marketplace" && <Marketplace briefs={briefs} selectedBriefId={selectedBriefId} selectedApplicationId={selectedApplicationId} activity={activity} progress={progress} onBrief={selectBrief} onApplication={selectApplication} onAssess={assess} onRecheck={recheck} onPolicy={() => navigate("policy")} onApply={() => setShowApply(true)} onPost={() => navigate("post")} />}
+      {page === "post" && <PostBrief activity={activity} onSubmit={postBrief} />}
+      {page === "policy" && <PolicyLab briefs={briefs} selectedApplicationId={selectedApplicationId} policy={policy} result={policyResult} activity={activity} onApplication={selectApplication} onPolicy={(next) => {setPolicy(next); setPolicyResult(undefined);}} onEvaluate={evaluate} onSelect={recordSelection} />}
       {page === "expansion" && <Expansion />}
       <Footer />
-      {showApply && selectedBrief && <ApplicationDialog brief={selectedBrief} busy={busy} onClose={() => setShowApply(false)} onSubmit={submitApplication} />}
+      {showApply && selectedBrief && <ApplicationDialog brief={selectedBrief} activity={activity} onClose={() => setShowApply(false)} onSubmit={submitApplication} />}
+      {mode === "live" && <TransactionTracker transaction={transaction} onDismiss={() => setTransaction(undefined)} />}
       {toast && <div className="toast" role="status"><Icon name="spark" /><span>{toast}</span><button type="button" aria-label="Dismiss notification" onClick={() => setToast("")}><Icon name="close" /></button></div>}
     </div>
   );
