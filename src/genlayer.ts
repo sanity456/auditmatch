@@ -12,6 +12,7 @@ import {policyToContractJson} from "./model";
 import {createPacedReader} from "./read-queue";
 import {readStudioContract} from "./studio-read";
 import {assertSuccessfulStudioExecution} from "./transaction";
+import {requireMetaMaskProvider} from "./wallet-provider";
 import type {
   Application,
   Assessment,
@@ -22,12 +23,6 @@ import type {
   WalletState,
 } from "./types";
 
-declare global {
-  interface Window {
-    ethereum?: EIP1193Provider;
-  }
-}
-
 const ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/;
 const STUDIONET_CHAIN_ID = 61_999;
 const STUDIONET_CHAIN_HEX = `0x${STUDIONET_CHAIN_ID.toString(16)}` as `0x${string}`;
@@ -37,6 +32,7 @@ const STUDIONET_EXPLORER_URL = "https://explorer-studio.genlayer.com";
 type UnknownRecord = Record<string, unknown>;
 
 const pacedRead = createPacedReader({intervalMs: 2250});
+let activeWalletProvider: EIP1193Provider | undefined;
 
 function record(value: unknown, label: string): UnknownRecord {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -83,8 +79,7 @@ function errorCode(cause: unknown): number | undefined {
 }
 
 export async function connectWallet(): Promise<WalletState> {
-  const provider = window.ethereum;
-  if (!provider) throw new Error("Install an EVM wallet such as MetaMask to use StudioNet");
+  const provider = await requireMetaMaskProvider();
   const accounts = await provider.request({method: "eth_requestAccounts"});
   const account = Array.isArray(accounts) ? accounts[0] : undefined;
   if (typeof account !== "string" || !ADDRESS_PATTERN.test(account)) {
@@ -112,6 +107,7 @@ export async function connectWallet(): Promise<WalletState> {
       ],
     });
   }
+  activeWalletProvider = provider;
   return {address: account as `0x${string}`};
 }
 
@@ -122,8 +118,8 @@ async function write(
   onSubmitted?: (hash: Hash, action: string) => void,
 ): Promise<Hash> {
   if (!HAS_LIVE_DEPLOYMENT) throw new Error("AuditMatch has not been deployed to StudioNet");
-  const provider = window.ethereum;
-  if (!provider) throw new Error("Wallet provider is unavailable");
+  const provider = activeWalletProvider;
+  if (!provider) throw new Error("Reconnect MetaMask before submitting a StudioNet transaction");
   const client = createClient({
     chain: studionet,
     account: wallet.address,

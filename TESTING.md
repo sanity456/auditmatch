@@ -2,7 +2,7 @@
 
 ## Fast checks
 
-Run GenVM lint before tests. `npm run verify` runs 18 frontend model/status checks, 10 receipt-safety checks, 15 StudioNet read regressions, 8 test-harness pacing/retry/timeout checks, and the production build. The Python direct suite covers input validation, roles, policy gating, history, expiry, and malformed model/source responses.
+Run GenVM lint before tests. `npm run verify` runs 18 frontend model/status checks, 10 receipt-safety checks, 15 StudioNet read regressions, 8 test-harness pacing/retry/timeout checks, 4 wallet-provider selection checks, and the production build. The Python direct suite covers input validation, roles, policy gating, history, expiry, and malformed model/source responses.
 
 ```powershell
 genvm-lint check contracts/audit_match.py --json
@@ -54,4 +54,4 @@ Generated reports are retained under `test-results/studionet/`, outside the `.ar
 
 ## Browser verification
 
-Use the deployed app's StudioNet mode to load the test brief, inspect its real evidence/assessment, and evaluate policy through the UI. The final `A3B71370` run was verified in the browser: the brief rendered as matched, its selection was bound to assessment 3, the default deterministic policy was satisfied, and the refreshed tab had no warnings or errors. Preview data remains separate. Browser-wallet connection, network switching, approval/rejection screens, and account changes should still be tested with an actual wallet before production release. The automated test provider does not stand in for that user-facing extension check.
+Use the deployed app's StudioNet mode to load the test brief, inspect its real evidence/assessment, and evaluate policy through the UI. The final `A3B71370` run was verified in the browser: the brief rendered as matched, its selection was bound to assessment 3, the default deterministic policy was satisfied, and the refreshed tab had no warnings or errors. Preview data remains separate. Wallet discovery now selects MetaMask explicitly through EIP-6963 or the injected provider list and refuses Phantom or ambiguous providers; four regressions cover that boundary. Browser-wallet connection, network switching, approval/rejection screens, and account changes should still be tested with an actual MetaMask wallet before production release. The automated test provider does not stand in for that user-facing extension check.

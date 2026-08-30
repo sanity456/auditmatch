@@ -22,9 +22,10 @@ Result: **PASS.** The native StudioNet workflow and the final read-only browser 
 | Receipt regressions | 10 passed |
 | StudioNet read regressions | 15 passed |
 | Read pacing/retry/timeout tests | 8 passed |
+| Wallet-provider selection tests | 4 passed |
 | Typecheck and production build | Passed |
 
-Total: 60 local checks passed, plus lint and build.
+Total: 64 local checks passed, plus lint and build.
 
 ## Live verification
 
