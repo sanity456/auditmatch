@@ -12,6 +12,8 @@ export type AppActivity =
   | "recording-selection";
 
 export type WalletRole = "Project owner" | "Applicant" | "Connected wallet";
+export type DataMode = "preview" | "live";
+export type RegistrySource = "preview" | "verified-snapshot" | "live";
 
 export type TransactionActivity = {
   action: string;
@@ -21,6 +23,8 @@ export type TransactionActivity = {
 };
 
 export const STUDIONET_EXPLORER_URL = "https://explorer-studio.genlayer.com";
+export const STUDIONET_DEPLOYMENT_TRANSACTION =
+  "0x9d2b0a398f37a96d859fb93e69907dab8111d82b26e6227231d6103c8ba8516b";
 
 const ACTIVITY_COPY: Record<Exclude<AppActivity, "idle">, string> = {
   "loading-registry": "Loading the StudioNet registry…",
@@ -39,6 +43,42 @@ export function activityCopy(activity: AppActivity): string {
 
 export function canChangeDataMode(activity: AppActivity): boolean {
   return activity === "idle" || activity === "loading-registry";
+}
+
+export function evidenceContextCopy(mode: DataMode): string {
+  return mode === "live"
+    ? "Fetched by validators at assessment"
+    : "Illustrative public references · simulated result";
+}
+
+export function selectionContextCopy(
+  mode: DataMode,
+  exceptionPath = false,
+): {title: string; detail: string} {
+  if (mode === "preview") {
+    return {
+      title: "Selection simulated locally",
+      detail: "This sample selection has no blockchain state.",
+    };
+  }
+  if (exceptionPath) {
+    return {
+      title: "Exception-path release test recorded on-chain",
+      detail: "An explicit test policy accepted an inconclusive assessment; this is plumbing evidence, not an auditor endorsement.",
+    };
+  }
+  return {
+    title: "Selection recorded on-chain",
+    detail: "The selected wallet is bound to the cited assessment in finalized StudioNet state.",
+  };
+}
+
+export function registryStatusCopy(source: RegistrySource): string {
+  if (source === "live") return "Live registry verified in this session";
+  if (source === "verified-snapshot") {
+    return "Verified snapshot shown while finalized StudioNet state refreshes";
+  }
+  return "Simulated Preview data";
 }
 
 export function walletRole(wallet: WalletState | undefined, brief: Brief | undefined): WalletRole {

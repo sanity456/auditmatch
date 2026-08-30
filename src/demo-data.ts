@@ -4,6 +4,10 @@ const PROJECT = "0x4A0d870e55e0d6E6f226Dc44dA96D3B25b2a1047";
 const CINDER = "0x86F0b9B539415c71E62754f58Ba42D4Dfe4D8c12";
 const NORTHSTAR = "0xA8A7A6b7A8025DF81CF0DabFc0cDdB13021E2456";
 const HEXLOOM = "0xF113AaF1632f47A436E68A41E7C1A57527a2F048";
+const SLITHER_REFERENCE = "https://raw.githubusercontent.com/crytic/slither/master/README.md";
+const SOLIDITY_REFERENCE = "https://docs.soliditylang.org/en/latest/security-considerations.html";
+const ETHEREUM_REFERENCE = "https://ethereum.org/en/developers/docs/smart-contracts/security/";
+const OWASP_REFERENCE = "https://owasp.org/www-project-smart-contract-top-10/";
 
 export function buildDemoBriefs(nowUnix = Math.floor(Date.now() / 1000)): Brief[] {
   const briefId = `${PROJECT.toLowerCase()}:BRIDGE-V2`;
@@ -54,12 +58,12 @@ export function buildDemoBriefs(nowUnix = Math.floor(Date.now() / 1000)): Brief[
           auditorWallet: CINDER,
           auditorName: "Cinder Security",
           profileSummary:
-            "Independent security team focused on Solidity bridges, cross-chain messaging, and invariant-driven review.",
+            "Fictional Preview applicant used to demonstrate a positive match. The cited links are public security references, not proof of this sample team's identity, work, or endorsement.",
           conflictDisclosure:
-            "No investment, employment, token allocation, or prior paid relationship with SeaGlass Protocol.",
+            "Sample disclosure only: no real team, engagement, investment, employment, token allocation, or procurement relationship is represented.",
           evidenceUrls: [
-            "https://github.com/cinder-security/audits",
-            "https://cindersec.example.com/research/bridge-invariants",
+            SLITHER_REFERENCE,
+            SOLIDITY_REFERENCE,
           ],
           state: "ASSESSED",
           assessment: {
@@ -71,8 +75,8 @@ export function buildDemoBriefs(nowUnix = Math.floor(Date.now() / 1000)): Brief[
             criterionCodes: "MMMM",
             reasonCodes: ["ALL_REQUIRED_FIT_CRITERIA_MET", "MULTI_SOURCE_EVIDENCE"],
             evidenceUrls: [
-              "https://github.com/cinder-security/audits",
-              "https://cindersec.example.com/research/bridge-invariants",
+              SLITHER_REFERENCE,
+              SOLIDITY_REFERENCE,
             ],
             issuedAtUnix: nowUnix - 2 * 86_400,
             expiresAtUnix: nowUnix + 28 * 86_400,
@@ -84,12 +88,12 @@ export function buildDemoBriefs(nowUnix = Math.floor(Date.now() / 1000)): Brief[
           auditorWallet: NORTHSTAR,
           auditorName: "Northstar Labs",
           profileSummary:
-            "Protocol review collective with strong Solidity coverage and public DeFi reports.",
+            "Fictional Preview applicant used to demonstrate a partial match. Public educational references stand in for evidence; they do not establish identity, authorship, or qualifications.",
           conflictDisclosure:
-            "Previously reviewed one SeaGlass dependency; no direct financial relationship disclosed.",
+            "Sample disclosure only: the fictional applicant reports a prior dependency review; no real-world relationship or conflict claim is made.",
           evidenceUrls: [
-            "https://github.com/northstar-labs/public-reports",
-            "https://northstar.example.org/capabilities",
+            ETHEREUM_REFERENCE,
+            OWASP_REFERENCE,
           ],
           state: "ASSESSED",
           assessment: {
@@ -101,8 +105,8 @@ export function buildDemoBriefs(nowUnix = Math.floor(Date.now() / 1000)): Brief[
             criterionCodes: "MPMM",
             reasonCodes: ["PARTIAL_REQUIRED_FIT_SUPPORT", "MULTI_SOURCE_EVIDENCE"],
             evidenceUrls: [
-              "https://github.com/northstar-labs/public-reports",
-              "https://northstar.example.org/capabilities",
+              ETHEREUM_REFERENCE,
+              OWASP_REFERENCE,
             ],
             issuedAtUnix: nowUnix - 86_400,
             expiresAtUnix: nowUnix + 29 * 86_400,
@@ -114,12 +118,12 @@ export function buildDemoBriefs(nowUnix = Math.floor(Date.now() / 1000)): Brief[
           auditorWallet: HEXLOOM,
           auditorName: "Hexloom Research",
           profileSummary:
-            "Small research collective specializing in cross-chain state machines and formal invariant design.",
+            "Fictional Preview applicant waiting for a simulated assessment. The public references exercise the interface and are not attributed to this sample identity.",
           conflictDisclosure:
-            "No prior engagement or financial relationship with SeaGlass Protocol is disclosed.",
+            "Sample disclosure only: no real applicant, engagement, affiliation, or financial relationship is represented.",
           evidenceUrls: [
-            "https://github.com/hexloom-research/reports",
-            "https://hexloom.example.net/work",
+            SLITHER_REFERENCE,
+            OWASP_REFERENCE,
           ],
           state: "EVIDENCE_SUBMITTED",
         },

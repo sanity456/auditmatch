@@ -13,7 +13,7 @@
   "createdAt": "2026-08-30T10:01:04.226048+00:00",
   "legacyDeployment": "deployments/studionet-v1.json",
   "verification": {
-    "verifiedAt": "2026-08-30T10:03:44.654Z",
+    "verifiedAt": "2026-08-30T13:52:00.717Z",
     "status": "FINALIZED",
     "executionResult": "SUCCESS",
     "sourceHashMatches": true,
@@ -22,7 +22,28 @@
     "protocolSchema": "auditmatch/protocol/v1",
     "initialCounts": {"brief": 0, "application": 0, "assessment": 0},
     "missingApplicationPolicy": {"satisfied": false, "failure_reasons": ["APPLICATION_NOT_FOUND"]},
-    "liveAssessmentWorkflowTested": false,
+    "liveAssessmentWorkflowTested": true,
+    "liveAssessmentWorkflowVerifiedAt": "2026-08-30T13:52:18.811Z",
+    "liveAssessmentJourney": {
+      "readOnlyVerification": true,
+      "briefId": "0x5aab9538b717de9f3380f86f00b698c79041bea7:VAULT-Q4",
+      "briefState": "MATCHED",
+      "applicationId": "0x5aab9538b717de9f3380f86f00b698c79041bea7:VAULT-Q4:APP:0x7271c1592429f9152a2142b0b225fce033d511d3",
+      "applicationState": "SELECTED",
+      "assessmentId": "0x5aab9538b717de9f3380f86f00b698c79041bea7:VAULT-Q4:APP:0x7271c1592429f9152a2142b0b225fce033d511d3:ASSESS:1",
+      "assessmentStatus": "ACTIVE",
+      "verdict": "INDETERMINATE",
+      "confidenceBps": 6000,
+      "independentSignalCount": 2,
+      "criterionCodes": "UUUU",
+      "strictPolicy": {
+        "satisfied": false,
+        "failureReasons": ["VERDICT_NOT_ACCEPTED", "CONFIDENCE_BELOW_POLICY"]
+      },
+      "explicitTestPolicy": {"satisfied": true, "failureReasons": []},
+      "selectionState": "CONFIRMED",
+      "disclosure": "Exception-path release test only; not an auditor endorsement or procurement relationship."
+    },
     "atomicPublishing": true,
     "atomicPublishingTested": true,
     "atomicPublishingRun": "ATOMIC-20260830100549-16C7F4BF",
@@ -44,7 +65,8 @@
     "walletAtomicPublishingTransferValue": "0",
     "walletAtomicPublishingBriefId": "0x5aab9538b717de9f3380f86f00b698c79041bea7:VAULT-Q4",
     "walletAtomicPublishingCriterionKeys": ["SOLIDITY", "ACCESS", "REPORT", "CONFLICT"],
-    "currentCounts": {"brief": 2, "application": 0, "assessment": 0},
+    "currentCounts": {"brief": 2, "application": 1, "assessment": 1},
+    "verifiedSnapshotAt": "2026-08-30T13:37:38.164Z",
     "legacyContractAddress": "0x6C651233ef4c6fC5476cC18Aa80cEEAD33b84D95",
     "endToEndReport": "E2E-REPORT.md"
   }

@@ -2,7 +2,7 @@
 
 Date: August 30, 2026 (UTC); passing native run completed August 29
 
-Result: **PASS.** Atomic v2 passes contract validation, frontend one-write regression, five-validator integration, exact StudioNet deployment verification, a live one-transaction publish smoke, and the final MetaMask one-approval flow. The original v1 release retains the complete real-source workflow, browser policy verification, MetaMask connection, and six-write wallet baseline as historical evidence. Atomic v2 replaces that six-write publication path with one zero-value transaction and cannot leave a partial draft through the primary app flow.
+Result: **PASS.** Atomic v2 passes contract validation, frontend one-write regression, five-validator integration, exact StudioNet deployment verification, a live one-transaction publish smoke, the final MetaMask one-approval flow, and a finalized application → assessment → policy → selection journey. The original v1 release retains the complete real-source workflow, browser policy verification, MetaMask connection, and six-write wallet baseline as historical evidence. Atomic v2 replaces that six-write publication path with one zero-value transaction and cannot leave a partial draft through the primary app flow.
 
 ## Changes verified locally
 
@@ -23,12 +23,13 @@ Result: **PASS.** Atomic v2 passes contract validation, frontend one-write regre
 | Receipt regressions | 10 passed |
 | StudioNet read regressions | 15 passed |
 | Read pacing/retry/timeout tests | 8 passed |
-| Wallet-provider selection tests | 4 passed |
+| Wallet-provider and account-change tests | 6 passed |
+| Release truthfulness and verified-snapshot tests | 8 passed |
 | Atomic frontend submission test | 1 passed; exactly one write |
 | Five-validator GLSim integration | 1 passed |
 | Typecheck and production build | Passed |
 
-Total: 68 local checks passed, plus lint, five-validator integration, and build.
+Total: 78 local automated checks passed, plus one five-validator integration, GenVM lint, and the production build (79 automated tests including integration).
 
 ## Atomic v2 verification
 
@@ -45,6 +46,16 @@ Total: 68 local checks passed, plus lint, five-validator integration, and build.
 - MetaMask result: `FINALIZED`; leader execution `SUCCESS`; `MAJORITY_AGREE`; three validators agreed; zero transfer value.
 - Wallet-created state: `0x5aab9538b717de9f3380f86f00b698c79041bea7:VAULT-Q4` is `OPEN` with required criteria `SOLIDITY`, `ACCESS`, `REPORT`, and `CONFLICT` frozen at positions 0–3.
 - The wallet-created record uses the app's bundled Meridian Treasury demonstration copy. It is release QA evidence, not proof of a real project, auditor, engagement, or procurement relationship.
+
+## Atomic v2 finalized journey
+
+- Read-only verification completed August 30, 2026 at `2026-08-30T13:52:18.811Z`; no signature or transaction was used for the gate.
+- Current registry counts: 2 briefs, 1 application, and 1 assessment.
+- `VAULT-Q4` is `MATCHED`; its release-test application is `SELECTED`; the selection is `CONFIRMED`.
+- Assessment 1 is `ACTIVE`, `INDETERMINATE`, 6000 BPS, two independent source domains, and criterion vector `UUUU`.
+- The default strict policy rejects it with `VERDICT_NOT_ACCEPTED` and `CONFIDENCE_BELOW_POLICY`.
+- A separately configured, explicitly acknowledged test policy accepts `INDETERMINATE` at 6000 BPS and passes. This is exception-path plumbing evidence, not a successful auditor match or endorsement.
+- The frontend bundles the exact state read at `2026-08-30T13:37:38.164Z`, displays it immediately with a dated snapshot label, and refreshes finalized state in the background using the paced public-RPC reader.
 
 ## Legacy v1 full workflow and browser verification
 
@@ -79,8 +90,8 @@ The browser confirmed that the previously failing policy query now passes and th
 - Every persistent test brief and candidate is clearly labeled `E2E TEST ONLY`. The criteria concern submitted public reference material, not a real auditor's identity, authorship, expertise, independence, or availability.
 - Automated test keys exist only in memory. The production QA wallet remained inside MetaMask; no seed phrase or private key was exposed. The legacy six-write baseline, atomic v2 smoke, and MetaMask atomic publish all had zero transfer value; no token transfer or real procurement occurred.
 - Permanent test records are not deleted; earlier failed-run keys were not retained.
-- Actual browser wallet-extension connection, StudioNet readiness, transaction approval, and the atomic one-write brief publication path were exercised with MetaMask. The resulting v2 brief and all four frozen criteria were verified by direct finalized-state reads. Rejection screens and account changes remain untested.
+- Actual browser wallet-extension connection, StudioNet readiness, project/applicant account switching, transaction approval, assessment, policy, selection, and the atomic one-write brief publication path were exercised with MetaMask. The resulting v2 brief and all four frozen criteria were verified by direct finalized-state reads. Six automated provider/account-change checks pass; the wallet-extension rejection screen remains untested.
 - The frontend is publicly hosted at `https://auditmatch.blazekingsley2.chatgpt.site` and remains available locally at `http://127.0.0.1:5175/` for development.
-- The public RPC is rate-limited; avoid simultaneous or rapid registry refreshes. Production-scale indexing and wallet rejection/account-change QA remain separate release work.
+- The public RPC is rate-limited. The UI now renders a dated verified snapshot immediately and performs one paced background refresh; production-scale indexing and wallet-rejection QA remain separate expansion work.
 
 See `TESTING.md` for repeatable commands and source links. The original Studio parser diagnosis is cited in the archived failure report.

@@ -1,6 +1,6 @@
 import {useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode} from "react";
 
-import {HAS_LIVE_DEPLOYMENT} from "./config";
+import {AUDITMATCH_CONTRACT_ADDRESS, HAS_LIVE_DEPLOYMENT} from "./config";
 import {buildDemoBriefs} from "./demo-data";
 import {
   CODE_LABELS,
@@ -16,19 +16,28 @@ import {
 } from "./model";
 import {
   STUDIONET_EXPLORER_URL,
+  STUDIONET_DEPLOYMENT_TRANSACTION,
   activityCopy,
   awaitingSignature,
   canChangeDataMode,
+  evidenceContextCopy,
   policyAcceptsException,
+  registryStatusCopy,
   requiresSelectionAcknowledgement,
+  selectionContextCopy,
   transactionFailed,
   transactionFinalized,
   transactionSubmitted,
   walletRole,
   type AppActivity,
+  type RegistrySource,
   type TransactionActivity,
   type WalletRole,
 } from "./release-state";
+import {
+  STUDIONET_SNAPSHOT_VERIFIED_AT,
+  buildVerifiedStudioNetSnapshot,
+} from "./studionet-snapshot";
 import type {
   Application,
   Assessment,
@@ -246,13 +255,44 @@ function Header({
   );
 }
 
-function LiveActivityBar({activity}: {activity: AppActivity}) {
+function LiveActivityBar({activity, registrySource}: {activity: AppActivity; registrySource: RegistrySource}) {
   if (activity === "idle") return null;
+  const copy = activity === "loading-registry" && registrySource === "verified-snapshot"
+    ? registryStatusCopy(registrySource)
+    : activityCopy(activity);
   return (
     <div className="live-activity" role="status" aria-live="polite">
       <span />
-      {activityCopy(activity)}
+      {copy}
     </div>
+  );
+}
+
+function StudioNetVerification({registrySource}: {registrySource: RegistrySource}) {
+  const isLive = registrySource === "live";
+  return (
+    <aside className="release-verification" aria-label="StudioNet release verification">
+      <div className="release-verification-status">
+        <span className={isLive ? "verified-live" : "verified-snapshot"} />
+        <div>
+          <strong>{isLive ? "Finalized StudioNet registry" : "Verified StudioNet snapshot"}</strong>
+          <small>{registryStatusCopy(registrySource)}</small>
+        </div>
+      </div>
+      <div className="release-verification-facts">
+        <span>Chain <b>61999</b></span>
+        <span><b>25</b> methods verified</span>
+        <span>Read-only snapshot <time dateTime={STUDIONET_SNAPSHOT_VERIFIED_AT}>Aug 30, 2026 · 13:37 UTC</time></span>
+      </div>
+      <div className="release-verification-contract">
+        <small>Atomic v2 contract</small>
+        <code title={AUDITMATCH_CONTRACT_ADDRESS}>{shortAddress(AUDITMATCH_CONTRACT_ADDRESS, 10, 8)}</code>
+        <a href={`${STUDIONET_EXPLORER_URL}/tx/${STUDIONET_DEPLOYMENT_TRANSACTION}`} target="_blank" rel="noreferrer">
+          Deployment proof <Icon name="arrow" size={13} />
+        </a>
+      </div>
+      <p>StudioNet release-QA records only. No real auditor endorsement, engagement, payment, or procurement relationship is represented.</p>
+    </aside>
   );
 }
 
@@ -432,6 +472,7 @@ function CandidateList({
 function AssessmentPanel({
   brief,
   application,
+  mode,
   activity,
   progress,
   onAssess,
@@ -440,6 +481,7 @@ function AssessmentPanel({
 }: {
   brief: Brief;
   application?: Application;
+  mode: Mode;
   activity: AppActivity;
   progress: string;
   onAssess: () => void;
@@ -470,18 +512,19 @@ function AssessmentPanel({
       <p className="profile-summary">{application.profileSummary}</p>
 
       {!assessment ? (
-        <div className="run-consensus-card">
-          <div className="consensus-icon"><Icon name="spark" size={24} /></div>
-          <div>
-            <span className="section-kicker"><span>AI</span> Intelligent transaction</span>
-            <h4>Evidence is ready for validator review.</h4>
-            <p>
-              Every validator will fetch {application.evidenceUrls.length} public sources and independently
-              return the same ordered criterion vector.
-            </p>
-          </div>
-          <button className="button button-primary" type="button" disabled={busy} onClick={onAssess}>
-            {activity === "assessing" ? "Consensus running…" : "Run GenLayer match"}
+          <div className="run-consensus-card">
+            <div className="consensus-icon"><Icon name="spark" size={24} /></div>
+            <div>
+              <span className="section-kicker"><span>AI</span> {mode === "live" ? "Intelligent transaction" : "Simulated intelligent transaction"}</span>
+              <h4>{mode === "live" ? "Evidence is ready for validator review." : "Sample evidence is ready for the Preview walkthrough."}</h4>
+              <p>
+                {mode === "live"
+                  ? `Every validator will fetch ${application.evidenceUrls.length} public sources and independently return the same ordered criterion vector.`
+                  : `Preview will simulate ${application.evidenceUrls.length} source checks and a matching criterion vector without fetching, signing, or writing.`}
+              </p>
+            </div>
+            <button className="button button-primary" type="button" disabled={busy} onClick={onAssess}>
+              {activity === "assessing" ? (mode === "live" ? "Consensus running…" : "Simulation running…") : (mode === "live" ? "Run GenLayer match" : "Run sample match")}
             {activity !== "assessing" && <Icon name="arrow" />}
           </button>
           {progress && <div className="progress-line" aria-live="polite"><span /> {progress}</div>}
@@ -523,7 +566,7 @@ function AssessmentPanel({
           </div>
 
           <div className="evidence-section">
-            <div className="subsection-title"><span>Cited public evidence</span><small>Fetched live at assessment</small></div>
+            <div className="subsection-title"><span>Cited public evidence</span><small>{evidenceContextCopy(mode)}</small></div>
             <div className="evidence-links">
               {application.evidenceUrls.map((url) => (
                 <a href={url} target="_blank" rel="noreferrer" key={url}>
@@ -540,7 +583,7 @@ function AssessmentPanel({
               Test selection policy <Icon name="arrow" />
             </button>
             <button className="button button-ghost" type="button" disabled={busy} onClick={onRecheck}>
-              <Icon name="refresh" /> {activity === "rechecking" ? "Rechecking…" : "Recheck sources"}
+              <Icon name="refresh" /> {activity === "rechecking" ? "Rechecking…" : (mode === "live" ? "Recheck sources" : "Simulate recheck")}
             </button>
           </div>
         </>
@@ -551,6 +594,7 @@ function AssessmentPanel({
 
 function Marketplace({
   briefs,
+  mode,
   selectedBriefId,
   selectedApplicationId,
   activity,
@@ -564,6 +608,7 @@ function Marketplace({
   onPost,
 }: {
   briefs: Brief[];
+  mode: Mode;
   selectedBriefId: string;
   selectedApplicationId: string;
   activity: AppActivity;
@@ -579,6 +624,10 @@ function Marketplace({
   const brief = briefs.find((item) => item.id === selectedBriefId) ?? briefs[0];
   const application = brief?.applications.find((item) => item.id === selectedApplicationId)
     ?? brief?.applications[0];
+  const recordedApplication = brief?.applications.find((item) => item.id === brief.selectedApplicationId);
+  const exceptionPath = recordedApplication?.assessment?.verdict === "INDETERMINATE"
+    || recordedApplication?.assessment?.verdict === "NO_MATCH";
+  const selectionCopy = selectionContextCopy(mode, exceptionPath);
   const openDemo = () => {
     if (!briefs[0]) return;
     onBrief(briefs[0].id);
@@ -617,7 +666,13 @@ function Marketplace({
                   <div><span>Terms</span><p>{brief.engagementTerms}</p></div>
                 </div>
                 {brief.state === "MATCHED" && (
-                  <div className="matched-banner"><Icon name="check" /><div><strong>Selection recorded on-chain</strong><span>{shortAddress(brief.selectedAuditorWallet)} is bound to assessment {shortAddress(brief.selectedAssessmentId, 16, 8)}.</span></div></div>
+                  <div className={`matched-banner ${exceptionPath ? "matched-exception" : ""}`}>
+                    <Icon name={exceptionPath ? "shield" : "check"} />
+                    <div>
+                      <strong>{selectionCopy.title}</strong>
+                      <span>{selectionCopy.detail} {shortAddress(brief.selectedAuditorWallet)} → {shortAddress(brief.selectedAssessmentId, 16, 8)}.</span>
+                    </div>
+                  </div>
                 )}
                 <div className="candidate-workspace">
                   <CandidateList
@@ -630,6 +685,7 @@ function Marketplace({
                   <AssessmentPanel
                     brief={brief}
                     application={application}
+                    mode={mode}
                     activity={activity}
                     progress={progress}
                     onAssess={onAssess}
@@ -646,7 +702,7 @@ function Marketplace({
   );
 }
 
-function PostBrief({activity, onSubmit}: {activity: AppActivity; onSubmit: (draft: NewBriefDraft) => void}) {
+function PostBrief({mode, activity, onSubmit}: {mode: Mode; activity: AppActivity; onSubmit: (draft: NewBriefDraft) => void}) {
   const busy = activity !== "idle";
   const [draft, setDraft] = useState<NewBriefDraft>({
     key: "VAULT-Q4",
@@ -690,7 +746,7 @@ function PostBrief({activity, onSubmit}: {activity: AppActivity; onSubmit: (draf
         <div className="form-section">
           <div className="form-section-number">01</div>
           <div className="form-section-body">
-            <div className="form-heading"><h2>Engagement</h2><p>Public, non-secret context only. On-chain text is permanent.</p></div>
+            <div className="form-heading"><h2>Engagement</h2><p>{mode === "live" ? "Public, non-secret context only. On-chain text is permanent." : "Preview input stays in this browser session and never reaches the blockchain."}</p></div>
             <div className="form-grid two">
               <label>Project name<input required minLength={2} maxLength={120} value={draft.projectName} onChange={(event) => setDraft({...draft, projectName: event.target.value})} /></label>
               <label>Brief key<input required pattern="[A-Za-z0-9_-]+" maxLength={56} value={draft.key} onChange={(event) => setDraft({...draft, key: event.target.value})} /></label>
@@ -725,8 +781,8 @@ function PostBrief({activity, onSubmit}: {activity: AppActivity; onSubmit: (draf
           <div className="form-section-number">03</div>
           <div className="form-section-body publish-row">
             <label>Assessment validity<select value={draft.validityDays} onChange={(event) => setDraft({...draft, validityDays: Number(event.target.value)})}><option value={14}>14 days</option><option value={30}>30 days</option><option value={60}>60 days</option><option value={90}>90 days</option></select></label>
-            <div><span className="preview-chip"><span /> Atomic publish · one approval</span><p>One transaction creates the brief, freezes every criterion, and opens applications.</p></div>
-            <button className="button button-primary" type="submit" disabled={busy}>{activity === "publishing-brief" ? "Publishing…" : "Publish atomically"}<Icon name="arrow" /></button>
+            <div><span className="preview-chip"><span /> {mode === "live" ? "Atomic publish · one approval" : "Preview simulation · zero approvals"}</span><p>{mode === "live" ? "One transaction creates the brief, freezes every criterion, and opens applications." : "The sample brief is added locally so you can test the workflow without a wallet."}</p></div>
+            <button className="button button-primary" type="submit" disabled={busy}>{activity === "publishing-brief" ? (mode === "live" ? "Publishing…" : "Simulating…") : (mode === "live" ? "Publish atomically" : "Create Preview brief")}<Icon name="arrow" /></button>
           </div>
         </div>
       </form>
@@ -736,6 +792,7 @@ function PostBrief({activity, onSubmit}: {activity: AppActivity; onSubmit: (draf
 
 function PolicyLab({
   briefs,
+  mode,
   selectedApplicationId,
   policy,
   result,
@@ -746,6 +803,7 @@ function PolicyLab({
   onSelect,
 }: {
   briefs: Brief[];
+  mode: Mode;
   selectedApplicationId: string;
   policy: Policy;
   result?: PolicyResult;
@@ -812,7 +870,7 @@ function PolicyLab({
           <button className="button button-primary full" type="button" disabled={busy || !selected} onClick={onEvaluate}>{activity === "evaluating-policy" ? "Evaluating…" : "Evaluate policy"}<Icon name="arrow" /></button>
         </section>
         <section className="policy-output" aria-live="polite">
-          <div className="code-card"><div><span>Deterministic contract read</span><b>VIEW</b></div><code>evaluate_policy_view(<br />&nbsp;&nbsp;application_id,<br />&nbsp;&nbsp;policy_json,<br />&nbsp;&nbsp;assessment_id<br />)</code><small>No web fetch. No model call. Same inputs, same result.</small></div>
+          <div className="code-card"><div><span>{mode === "live" ? "Deterministic contract read" : "Local Preview simulation"}</span><b>{mode === "live" ? "VIEW" : "LOCAL"}</b></div><code>evaluate_policy_view(<br />&nbsp;&nbsp;application_id,<br />&nbsp;&nbsp;policy_json,<br />&nbsp;&nbsp;assessment_id<br />)</code><small>{mode === "live" ? "No web fetch. No model call. Same inputs, same result." : "Mirrors the policy rules locally; switch to StudioNet for the contract view."}</small></div>
           {!result ? (
             <EmptyState title="Ready to evaluate" copy="The result will list every failing condition rather than returning an opaque score." />
           ) : (
@@ -820,18 +878,18 @@ function PolicyLab({
               <div className="result-icon"><Icon name={result.satisfied ? "check" : "close"} size={28} /></div>
               <span>{result.satisfied ? "Policy satisfied" : "Policy not satisfied"}</span>
               <h2>{result.satisfied ? (exceptionRequired ? "This assessment clears an exception gate." : "This assessment clears the gate.") : `${result.failureReasons.length} condition${result.failureReasons.length === 1 ? "" : "s"} failed.`}</h2>
-              <p>{result.satisfied ? (exceptionRequired ? "Policy satisfaction confirms only that the configured exception rules passed—not auditor qualification." : "The project can record this auditor selection without another subjective query.") : "Tight policies fail explicitly and remain auditable."}</p>
+              <p>{result.satisfied ? (mode === "preview" ? "This local Preview mirrors the policy decision without reading or changing blockchain state." : (exceptionRequired ? "Policy satisfaction confirms only that the configured exception rules passed—not auditor qualification." : "The project can record this auditor selection without another subjective query.")) : "Tight policies fail explicitly and remain auditable."}</p>
               {result.failureReasons.length > 0 && <ul>{result.failureReasons.map((failure) => <li key={failure}>{failureLabel(failure)}</li>)}</ul>}
               {result.satisfied && exceptionRequired && selected?.brief.state === "OPEN" && (
                 <label className="exception-acknowledgement">
                   <input type="checkbox" checked={exceptionAcknowledged} onChange={(event) => setExceptionAcknowledged(event.target.checked)} />
-                  <span>I understand this records an inconclusive test or exception selection on-chain.</span>
+                  <span>I understand this {mode === "live" ? "records" : "simulates"} an inconclusive test or exception selection{mode === "live" ? " on-chain" : " locally"}.</span>
                 </label>
               )}
               {result.satisfied && selected?.brief.state === "OPEN" && (
-                <button className="button button-primary full" type="button" disabled={busy || (exceptionRequired && !exceptionAcknowledged)} onClick={onSelect}>{activity === "recording-selection" ? "Recording…" : exceptionRequired ? "Record exception selection" : "Record auditor selection"} <Icon name="arrow" /></button>
+                <button className="button button-primary full" type="button" disabled={busy || (exceptionRequired && !exceptionAcknowledged)} onClick={onSelect}>{activity === "recording-selection" ? (mode === "live" ? "Recording…" : "Simulating…") : (mode === "preview" ? "Simulate auditor selection" : exceptionRequired ? "Record exception selection" : "Record auditor selection")} <Icon name="arrow" /></button>
               )}
-              {result.satisfied && selected?.brief.state === "MATCHED" && <StatusPill tone="positive">Selection already recorded</StatusPill>}
+              {result.satisfied && selected?.brief.state === "MATCHED" && <StatusPill tone="positive">{mode === "live" ? "Selection already recorded" : "Preview selection already simulated"}</StatusPill>}
             </div>
           )}
         </section>
@@ -874,21 +932,23 @@ function Expansion() {
 
 function ApplicationDialog({
   brief,
+  mode,
   activity,
   onClose,
   onSubmit,
 }: {
   brief: Brief;
+  mode: Mode;
   activity: AppActivity;
   onClose: () => void;
   onSubmit: (draft: ApplicationDraft) => void;
 }) {
   const busy = activity !== "idle";
   const [draft, setDraft] = useState<ApplicationDraft>({
-    auditorName: "Proofline Security",
-    profileSummary: "Independent security researchers focused on Solidity protocol reviews, access-control design, and invariant testing.",
-    conflictDisclosure: `No investment, employment, token allocation, or prior paid relationship with ${brief.projectName} is disclosed.`,
-    evidenceUrls: ["https://github.com/proofline-security/reports", "https://proofline.example.org/auditor-profile"],
+    auditorName: "",
+    profileSummary: "",
+    conflictDisclosure: "",
+    evidenceUrls: ["", ""],
   });
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -900,14 +960,14 @@ function ApplicationDialog({
         <button className="dialog-close" type="button" aria-label="Close application" onClick={onClose}><Icon name="close" /></button>
         <span className="section-kicker"><span>Apply</span> {brief.projectName}</span>
         <h2 id="application-dialog-title">Bind public evidence to your wallet.</h2>
-        <p>Submit only public information. Validators will fetch every URL live; a profile claim alone is not treated as proof.</p>
+        <p>{mode === "live" ? "Submit only public information. Validators will fetch every URL live; a profile claim alone is not treated as proof." : "Preview simulates submission and assessment locally. Use illustrative public URLs only; nothing is written on-chain."}</p>
         <form onSubmit={submit}>
-          <label>Auditor or team name<input required minLength={2} value={draft.auditorName} onChange={(event) => setDraft({...draft, auditorName: event.target.value})} /></label>
-          <label>Fit summary<textarea required minLength={30} rows={4} value={draft.profileSummary} onChange={(event) => setDraft({...draft, profileSummary: event.target.value})} /></label>
-          <label>Conflict disclosure<textarea required minLength={20} rows={3} value={draft.conflictDisclosure} onChange={(event) => setDraft({...draft, conflictDisclosure: event.target.value})} /></label>
+          <label>Auditor or team name<input required minLength={2} placeholder="Your public name" value={draft.auditorName} onChange={(event) => setDraft({...draft, auditorName: event.target.value})} /></label>
+          <label>Fit summary<textarea required minLength={30} rows={4} placeholder="Explain how your own public work maps to this frozen brief." value={draft.profileSummary} onChange={(event) => setDraft({...draft, profileSummary: event.target.value})} /></label>
+          <label>Conflict disclosure<textarea required minLength={20} rows={3} placeholder={`Disclose any relationship with ${brief.projectName}, including none.`} value={draft.conflictDisclosure} onChange={(event) => setDraft({...draft, conflictDisclosure: event.target.value})} /></label>
           <div className="form-grid two">
-            <label>Evidence URL 1<input required type="url" pattern="https://.*" value={draft.evidenceUrls[0]} onChange={(event) => setDraft({...draft, evidenceUrls: [event.target.value, draft.evidenceUrls[1]]})} /></label>
-            <label>Evidence URL 2<input required type="url" pattern="https://.*" value={draft.evidenceUrls[1]} onChange={(event) => setDraft({...draft, evidenceUrls: [draft.evidenceUrls[0], event.target.value]})} /></label>
+            <label>Evidence URL 1<input required type="url" pattern="https://.*" placeholder="https://your-domain.example/report" value={draft.evidenceUrls[0]} onChange={(event) => setDraft({...draft, evidenceUrls: [event.target.value, draft.evidenceUrls[1]]})} /></label>
+            <label>Evidence URL 2<input required type="url" pattern="https://.*" placeholder="https://another-domain.example/profile" value={draft.evidenceUrls[1]} onChange={(event) => setDraft({...draft, evidenceUrls: [draft.evidenceUrls[0], event.target.value]})} /></label>
           </div>
           <button className="button button-primary full" type="submit" disabled={busy}>{activity === "submitting-application" ? "Submitting…" : "Submit evidence application"}<Icon name="arrow" /></button>
         </form>
@@ -931,6 +991,7 @@ export default function App() {
   const initialPending = initialBriefs[0]?.applications.find((item) => !item.assessment);
   const [page, setPage] = useState<Page>("marketplace");
   const [mode, setMode] = useState<Mode>("preview");
+  const [registrySource, setRegistrySource] = useState<RegistrySource>("preview");
   const [briefs, setBriefs] = useState<Brief[]>(initialBriefs);
   const [selectedBriefId, setSelectedBriefId] = useState(initialBriefs[0]?.id ?? "");
   const [selectedApplicationId, setSelectedApplicationId] = useState(initialPending?.id ?? initialBriefs[0]?.applications[0]?.id ?? "");
@@ -1028,6 +1089,7 @@ export default function App() {
 
   const refreshLive = async (preferredBrief = "", preferredApplication = "") => {
     applyLiveRegistry(await loadLiveRegistry(), preferredBrief, preferredApplication);
+    setRegistrySource("live");
   };
 
   const changeMode = async (next: Mode) => {
@@ -1043,23 +1105,26 @@ export default function App() {
       setBriefs(demo);
       setSelectedBriefId(demo[0]?.id ?? "");
       setSelectedApplicationId(demo[0]?.applications.find((item) => !item.assessment)?.id ?? demo[0]?.applications[0]?.id ?? "");
+      setRegistrySource("preview");
       setMode(next);
       if (activity === "loading-registry") setActivity("idle");
       return;
     }
     const requestId = registryModeRequest.current + 1;
     registryModeRequest.current = requestId;
+    applyLiveRegistry(buildVerifiedStudioNetSnapshot());
+    setRegistrySource("verified-snapshot");
     setMode(next);
-    setBriefs([]);
-    setSelectedBriefId("");
-    setSelectedApplicationId("");
     setActivity("loading-registry");
     try {
       const registry = await loadLiveRegistry();
-      if (registryModeRequest.current === requestId) applyLiveRegistry(registry);
+      if (registryModeRequest.current === requestId) {
+        applyLiveRegistry(registry);
+        setRegistrySource("live");
+      }
     } catch (cause) {
       if (registryModeRequest.current === requestId) {
-        setToast(errorMessage(cause, "Could not load StudioNet registry."));
+        setToast(`${errorMessage(cause, "Could not refresh StudioNet registry.")} The dated verified snapshot remains visible.`);
       }
     } finally {
       if (registryModeRequest.current === requestId) setActivity("idle");
@@ -1107,10 +1172,10 @@ export default function App() {
     try {
       if (mode === "preview") {
         for (const message of [
-          `Fetching ${selectedApplication.evidenceUrls.length} public sources…`,
-          "Validators independently assessing 4 frozen criteria…",
-          "Criterion vectors agree: MMMM",
-          "Issuing expiring fit assessment…",
+          `Simulating ${selectedApplication.evidenceUrls.length} public-source checks…`,
+          "Simulating independent review of the frozen criteria…",
+          "Sample criterion vectors agree: MMMM",
+          "Creating a local expiring fit assessment…",
         ]) {
           setProgress(message);
           await sleep(260);
@@ -1129,7 +1194,7 @@ export default function App() {
           expiresAtUnix: now + selectedBrief.validityDays * 86_400,
         };
         setBriefs((current) => current.map((brief) => brief.id === selectedBrief.id ? {...brief, applications: brief.applications.map((application) => application.id === selectedApplication.id ? {...application, state: "ASSESSED", assessment} : application)} : brief));
-        setToast("Consensus reached. A STRONG_MATCH assessment was issued.");
+        setToast("Preview simulation complete. A local STRONG_MATCH sample was created.");
       } else {
         const activeWallet = requireWallet();
         if (!activeWallet) return;
@@ -1154,13 +1219,13 @@ export default function App() {
     setActivity("rechecking");
     try {
       if (mode === "preview") {
-        setProgress("Refetching every cited source…");
+        setProgress("Simulating a fresh source check…");
         await sleep(500);
         const now = Math.floor(Date.now() / 1000);
         const nextVersion = Number(selectedApplication.assessment.id.match(/ASSESS:(\d+)$/)?.[1] ?? "1") + 1;
         const assessment = {...selectedApplication.assessment, id: `${selectedApplication.id}:ASSESS:${nextVersion}`, issuedAtUnix: now, expiresAtUnix: now + selectedBrief.validityDays * 86_400};
         setBriefs((current) => current.map((brief) => brief.id === selectedBrief.id ? {...brief, applications: brief.applications.map((application) => application.id === selectedApplication.id ? {...application, assessment} : application)} : brief));
-        setToast("Sources rechecked. The previous assessment remains in history as superseded.");
+        setToast("Preview recheck simulated. No source was fetched and no chain state changed.");
       } else {
         const activeWallet = requireWallet();
         if (!activeWallet) return;
@@ -1239,7 +1304,9 @@ export default function App() {
         finalizedTransaction(hash);
         await refreshLive(selectedBrief.id, selectedApplication.id);
       }
-      setToast(`Selection recorded: ${selectedApplication.auditorName}.`);
+      setToast(mode === "preview"
+        ? `Selection simulated locally: ${selectedApplication.auditorName}.`
+        : `Selection recorded on StudioNet: ${selectedApplication.auditorName}.`);
       navigate("marketplace");
     } catch (cause) {
       setToast(mode === "live" ? failedTransaction(cause, "Selection failed.") : errorMessage(cause, "Selection failed."));
@@ -1286,7 +1353,9 @@ export default function App() {
         finalizedTransaction(hash);
         await refreshLive(briefId);
       }
-      setToast("Brief published. Its fit criteria are now frozen.");
+      setToast(mode === "preview"
+        ? "Brief simulated locally. Its Preview criteria are frozen for this session."
+        : "Brief published on StudioNet. Its fit criteria are now frozen.");
       navigate("marketplace");
     } catch (cause) {
       setToast(mode === "live" ? failedTransaction(cause, "Brief publishing failed.") : errorMessage(cause, "Brief publishing failed."));
@@ -1345,13 +1414,14 @@ export default function App() {
     <div className="app">
       <Header page={page} mode={mode} wallet={wallet} role={currentWalletRole} activity={activity} onNavigate={navigate} onMode={changeMode} onConnect={connect} />
       {mode === "preview" && activity !== "loading-registry" && <div className="preview-banner"><strong>Interactive preview</strong><span>All actions below are simulated locally. No wallet prompt and no blockchain state change.</span></div>}
-      {(mode === "live" || activity === "loading-registry") && <LiveActivityBar activity={activity} />}
-      {page === "marketplace" && <Marketplace briefs={briefs} selectedBriefId={selectedBriefId} selectedApplicationId={selectedApplicationId} activity={activity} progress={progress} onBrief={selectBrief} onApplication={selectApplication} onAssess={assess} onRecheck={recheck} onPolicy={() => navigate("policy")} onApply={() => setShowApply(true)} onPost={() => navigate("post")} />}
-      {page === "post" && <PostBrief activity={activity} onSubmit={postBrief} />}
-      {page === "policy" && <PolicyLab briefs={briefs} selectedApplicationId={selectedApplicationId} policy={policy} result={policyResult} activity={activity} onApplication={selectApplication} onPolicy={(next) => {setPolicy(next); setPolicyResult(undefined);}} onEvaluate={evaluate} onSelect={recordSelection} />}
+      {(mode === "live" || activity === "loading-registry") && <LiveActivityBar activity={activity} registrySource={registrySource} />}
+      {mode === "live" && <StudioNetVerification registrySource={registrySource} />}
+      {page === "marketplace" && <Marketplace briefs={briefs} mode={mode} selectedBriefId={selectedBriefId} selectedApplicationId={selectedApplicationId} activity={activity} progress={progress} onBrief={selectBrief} onApplication={selectApplication} onAssess={assess} onRecheck={recheck} onPolicy={() => navigate("policy")} onApply={() => setShowApply(true)} onPost={() => navigate("post")} />}
+      {page === "post" && <PostBrief mode={mode} activity={activity} onSubmit={postBrief} />}
+      {page === "policy" && <PolicyLab briefs={briefs} mode={mode} selectedApplicationId={selectedApplicationId} policy={policy} result={policyResult} activity={activity} onApplication={selectApplication} onPolicy={(next) => {setPolicy(next); setPolicyResult(undefined);}} onEvaluate={evaluate} onSelect={recordSelection} />}
       {page === "expansion" && <Expansion />}
       <Footer />
-      {showApply && selectedBrief && <ApplicationDialog brief={selectedBrief} activity={activity} onClose={() => setShowApply(false)} onSubmit={submitApplication} />}
+      {showApply && selectedBrief && <ApplicationDialog brief={selectedBrief} mode={mode} activity={activity} onClose={() => setShowApply(false)} onSubmit={submitApplication} />}
       {mode === "live" && <TransactionTracker transaction={transaction} onDismiss={() => setTransaction(undefined)} />}
       {toast && <div className="toast" role="status"><Icon name="spark" /><span>{toast}</span><button type="button" aria-label="Dismiss notification" onClick={() => setToast("")}><Icon name="close" /></button></div>}
     </div>
