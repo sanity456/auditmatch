@@ -5,6 +5,7 @@ import {buildDemoBriefs} from "../src/demo-data";
 import {
   activityCopy,
   awaitingSignature,
+  canChangeDataMode,
   policyAcceptsException,
   requiresSelectionAcknowledgement,
   transactionFailed,
@@ -62,4 +63,11 @@ test("operation copy names the actual background work", () => {
   assert.equal(activityCopy("loading-registry"), "Loading the StudioNet registry…");
   assert.equal(activityCopy("publishing-brief"), "Publishing the brief and frozen criteria…");
   assert.equal(activityCopy("evaluating-policy"), "Running the deterministic policy read…");
+});
+
+test("data mode remains switchable while the live registry loads", () => {
+  assert.equal(canChangeDataMode("idle"), true);
+  assert.equal(canChangeDataMode("loading-registry"), true);
+  assert.equal(canChangeDataMode("publishing-brief"), false);
+  assert.equal(canChangeDataMode("assessing"), false);
 });

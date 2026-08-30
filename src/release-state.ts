@@ -37,6 +37,10 @@ export function activityCopy(activity: AppActivity): string {
   return activity === "idle" ? "" : ACTIVITY_COPY[activity];
 }
 
+export function canChangeDataMode(activity: AppActivity): boolean {
+  return activity === "idle" || activity === "loading-registry";
+}
+
 export function walletRole(wallet: WalletState | undefined, brief: Brief | undefined): WalletRole {
   if (!wallet || !brief) return "Connected wallet";
   const address = wallet.address.toLowerCase();

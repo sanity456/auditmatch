@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState, type FormEvent, type ReactNode} from "react";
+import {useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode} from "react";
 
 import {HAS_LIVE_DEPLOYMENT} from "./config";
 import {buildDemoBriefs} from "./demo-data";
@@ -18,6 +18,7 @@ import {
   STUDIONET_EXPLORER_URL,
   activityCopy,
   awaitingSignature,
+  canChangeDataMode,
   policyAcceptsException,
   requiresSelectionAcknowledgement,
   transactionFailed,
@@ -174,6 +175,7 @@ function Header({
   onConnect: () => void;
 }) {
   const busy = activity !== "idle";
+  const modeChangeDisabled = !canChangeDataMode(activity);
   const nav: Array<{id: Page; label: string}> = [
     {id: "marketplace", label: "Matches"},
     {id: "post", label: "Post a brief"},
@@ -204,7 +206,7 @@ function Header({
           <button
             type="button"
             className={mode === "preview" ? "active" : ""}
-            disabled={busy}
+            disabled={modeChangeDisabled}
             onClick={() => onMode("preview")}
           >
             Preview
@@ -212,7 +214,7 @@ function Header({
           <button
             type="button"
             className={mode === "live" ? "active" : ""}
-            disabled={busy}
+            disabled={modeChangeDisabled}
             onClick={() => onMode("live")}
           >
             StudioNet
@@ -940,6 +942,8 @@ export default function App() {
   const [progress, setProgress] = useState("");
   const [toast, setToast] = useState("");
   const [showApply, setShowApply] = useState(false);
+  const registryModeRequest = useRef(0);
+  const pendingRegistryLoad = useRef<Promise<Brief[]> | undefined>(undefined);
 
   const selectedBrief = briefs.find((brief) => brief.id === selectedBriefId) ?? briefs[0];
   const selectedApplication = selectedBrief?.applications.find((item) => item.id === selectedApplicationId)
@@ -999,9 +1003,7 @@ export default function App() {
     window.scrollTo({top: 0, behavior: "instant"});
   };
 
-  const refreshLive = async (preferredBrief = "", preferredApplication = "") => {
-    const {loadRegistry} = await import("./genlayer");
-    const registry = await loadRegistry();
+  const applyLiveRegistry = (registry: Brief[], preferredBrief = "", preferredApplication = "") => {
     setBriefs(registry);
     const briefId = preferredBrief || registry[0]?.id || "";
     setSelectedBriefId(briefId);
@@ -1009,29 +1011,58 @@ export default function App() {
     setSelectedApplicationId(preferredApplication || brief?.applications[0]?.id || "");
   };
 
+  const loadLiveRegistry = (): Promise<Brief[]> => {
+    if (pendingRegistryLoad.current) return pendingRegistryLoad.current;
+    const request = import("./genlayer").then(({loadRegistry}) => loadRegistry());
+    pendingRegistryLoad.current = request;
+    void request.then(
+      () => {
+        if (pendingRegistryLoad.current === request) pendingRegistryLoad.current = undefined;
+      },
+      () => {
+        if (pendingRegistryLoad.current === request) pendingRegistryLoad.current = undefined;
+      },
+    );
+    return request;
+  };
+
+  const refreshLive = async (preferredBrief = "", preferredApplication = "") => {
+    applyLiveRegistry(await loadLiveRegistry(), preferredBrief, preferredApplication);
+  };
+
   const changeMode = async (next: Mode) => {
-    if (next === mode || busy) return;
+    if (next === mode || !canChangeDataMode(activity)) return;
     if (next === "live" && !HAS_LIVE_DEPLOYMENT) {
       setToast("Deploy the contract and set VITE_AUDITMATCH_CONTRACT_ADDRESS to enable StudioNet mode.");
       return;
     }
     setPolicyResult(undefined);
     if (next === "preview") {
+      registryModeRequest.current += 1;
       const demo = buildDemoBriefs();
       setBriefs(demo);
       setSelectedBriefId(demo[0]?.id ?? "");
       setSelectedApplicationId(demo[0]?.applications.find((item) => !item.assessment)?.id ?? demo[0]?.applications[0]?.id ?? "");
       setMode(next);
+      if (activity === "loading-registry") setActivity("idle");
       return;
     }
+    const requestId = registryModeRequest.current + 1;
+    registryModeRequest.current = requestId;
+    setMode(next);
+    setBriefs([]);
+    setSelectedBriefId("");
+    setSelectedApplicationId("");
     setActivity("loading-registry");
     try {
-      await refreshLive();
-      setMode(next);
+      const registry = await loadLiveRegistry();
+      if (registryModeRequest.current === requestId) applyLiveRegistry(registry);
     } catch (cause) {
-      setToast(errorMessage(cause, "Could not load StudioNet registry."));
+      if (registryModeRequest.current === requestId) {
+        setToast(errorMessage(cause, "Could not load StudioNet registry."));
+      }
     } finally {
-      setActivity("idle");
+      if (registryModeRequest.current === requestId) setActivity("idle");
     }
   };
 
