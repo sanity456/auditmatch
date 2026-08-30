@@ -2,7 +2,7 @@
 
 Date: August 30, 2026 (UTC); passing native run completed August 29
 
-Result: **PASS.** Atomic v2 passes contract validation, frontend one-write regression, five-validator integration, exact StudioNet deployment verification, and a live one-transaction publish smoke. The original v1 release retains the complete real-source workflow, browser policy verification, MetaMask connection, and six-write wallet baseline as historical evidence. Atomic v2 replaces that six-write publication path with one zero-value transaction and cannot leave a partial draft through the primary app flow.
+Result: **PASS.** Atomic v2 passes contract validation, frontend one-write regression, five-validator integration, exact StudioNet deployment verification, a live one-transaction publish smoke, and the final MetaMask one-approval flow. The original v1 release retains the complete real-source workflow, browser policy verification, MetaMask connection, and six-write wallet baseline as historical evidence. Atomic v2 replaces that six-write publication path with one zero-value transaction and cannot leave a partial draft through the primary app flow.
 
 ## Changes verified locally
 
@@ -41,6 +41,10 @@ Total: 68 local checks passed, plus lint, five-validator integration, and build.
 - Result: one zero-value, full-consensus transaction; leader execution `SUCCESS`; three validators agreed.
 - Final state: brief `OPEN`, four required criteria in submitted order: `ATOMIC_COUNT`, `ORDER_PRESERVED`, `NO_PAYMENT`, `TEST_ONLY`.
 - Test key was generated in memory and not persisted. The permanent record is labeled `E2E TEST ONLY`.
+- MetaMask transaction: `0xc1c964c88b3f93b443b027ce8c0a0aba72581ba1d93010a04ecfbf3f9a6e3cca`.
+- MetaMask result: `FINALIZED`; leader execution `SUCCESS`; `MAJORITY_AGREE`; three validators agreed; zero transfer value.
+- Wallet-created state: `0x5aab9538b717de9f3380f86f00b698c79041bea7:VAULT-Q4` is `OPEN` with required criteria `SOLIDITY`, `ACCESS`, `REPORT`, and `CONFLICT` frozen at positions 0–3.
+- The wallet-created record uses the app's bundled Meridian Treasury demonstration copy. It is release QA evidence, not proof of a real project, auditor, engagement, or procurement relationship.
 
 ## Legacy v1 full workflow and browser verification
 
@@ -73,9 +77,9 @@ The browser confirmed that the previously failing policy query now passes and th
 ## Safety boundary and remaining coverage
 
 - Every persistent test brief and candidate is clearly labeled `E2E TEST ONLY`. The criteria concern submitted public reference material, not a real auditor's identity, authorship, expertise, independence, or availability.
-- Automated test keys exist only in memory. The production QA wallet remained inside MetaMask; no seed phrase or private key was exposed. Both the legacy six-write baseline and atomic v2 smoke had zero transfer value, and no token transfer or real procurement occurred.
+- Automated test keys exist only in memory. The production QA wallet remained inside MetaMask; no seed phrase or private key was exposed. The legacy six-write baseline, atomic v2 smoke, and MetaMask atomic publish all had zero transfer value; no token transfer or real procurement occurred.
 - Permanent test records are not deleted; earlier failed-run keys were not retained.
-- Actual browser wallet-extension connection, StudioNet readiness, transaction approvals, and the legacy six-write brief publication path were exercised with MetaMask. Atomic v2 has full live contract proof through the restricted ephemeral provider; its final MetaMask prompt remains separate action-time QA. Rejection screens and account changes also remain untested.
+- Actual browser wallet-extension connection, StudioNet readiness, transaction approval, and the atomic one-write brief publication path were exercised with MetaMask. The resulting v2 brief and all four frozen criteria were verified by direct finalized-state reads. Rejection screens and account changes remain untested.
 - The frontend is publicly hosted at `https://auditmatch.blazekingsley2.chatgpt.site` and remains available locally at `http://127.0.0.1:5175/` for development.
 - The public RPC is rate-limited; avoid simultaneous or rapid registry refreshes. Production-scale indexing and wallet rejection/account-change QA remain separate release work.
 
