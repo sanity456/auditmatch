@@ -2,7 +2,7 @@
 
 Date: August 30, 2026 (UTC); passing native run completed August 29
 
-Result: **PASS.** The native StudioNet workflow and the final read-only browser flow both passed. The original receipt and policy-read defects are fixed, the full contract workflow passed with real sources and normal consensus, and the app rendered the resulting matched selection and deterministic policy decision without browser errors. Actual wallet-extension prompts remain separate manual release QA.
+Result: **PASS.** The native StudioNet workflow, read-only browser flow, and live MetaMask connection all passed. The original receipt and policy-read defects are fixed, the full contract workflow passed with real sources and normal consensus, and the app rendered the resulting matched selection and deterministic policy decision without browser errors. The production connection selected MetaMask explicitly and did not open Phantom; no transaction was requested or signed.
 
 ## Changes verified locally
 
@@ -42,6 +42,7 @@ Total: 64 local checks passed, plus lint and build.
 - Read retries in the passing run: zero.
 - Final browser verification: **PASS** after the user refreshed the existing localhost tab. StudioNet rendered the `A3B71370` brief as `Matched`, showed the selected test candidate at 90% with two independent domains and `MM`, and displayed the selection bound to assessment 3.
 - Deterministic browser policy read: **PASS**. The UI returned `Policy satisfied`, `This assessment clears the gate.`, and `Selection already recorded`; the refreshed tab reported no warnings or errors.
+- Production wallet connection: **PASS** with user approval. Version 4 selected MetaMask, retained StudioNet, replaced `Connect` with the shortened connected address, and opened no Phantom tab or prompt. No on-chain transaction was initiated.
 
 The passing workflow used real web/model calls, normal consensus, no mocked responses, and no validator overrides. It checked brief creation, access controls, actual assessment, policy pass/rejection, rechecks and preserved history, contests and resolution, policy-gated selection, and repeat-selection rejection.
 
@@ -58,8 +59,8 @@ The browser confirmed that the previously failing policy query now passes and th
 - Every persistent test brief and candidate is clearly labeled `E2E TEST ONLY`. The criteria concern submitted public reference material, not a real auditor's identity, authorship, expertise, independence, or availability.
 - Test keys exist only in memory. No existing wallet keys or user funds were used. No token transfers or real procurement occurred.
 - Permanent test records are not deleted; earlier failed-run keys were not retained.
-- Actual browser wallet-extension connection, network switching, approval/rejection screens, and signing are not exercised by the ephemeral EIP-1193 test signer.
+- Actual browser wallet-extension connection and StudioNet readiness were exercised with MetaMask. Rejection screens, account changes, and transaction signing remain untested and require separate action-time approval.
 - The frontend is publicly hosted at `https://auditmatch.blazekingsley2.chatgpt.site` and remains available locally at `http://127.0.0.1:5175/` for development.
-- The public RPC is rate-limited; avoid simultaneous or rapid registry refreshes. Production-scale indexing and wallet-extension QA remain separate release work.
+- The public RPC is rate-limited; avoid simultaneous or rapid registry refreshes. Production-scale indexing and wallet rejection/signing QA remain separate release work.
 
 See `TESTING.md` for repeatable commands and source links. The original Studio parser diagnosis is cited in the archived failure report.
