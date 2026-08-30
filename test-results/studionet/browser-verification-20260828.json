@@ -1,0 +1,70 @@
+{
+  "checkedAt": "2026-08-28T20:01:41.303Z",
+  "finalCheckedAt": "2026-08-30T07:55:42.964Z",
+  "appUrl": "http://127.0.0.1:5175/",
+  "contractAddress": "0x6C651233ef4c6fC5476cC18Aa80cEEAD33b84D95",
+  "dataMode": "StudioNet",
+  "originalApplicationId": "0x5f257ab9cd0d6e733569f362573fb6080c78010f:E2E-20260828191118-ABF16227:APP:0xf874514cd9b1a29bad6c28dee719c856e69a91c1",
+  "checks": [
+    {
+      "name": "Previously failing large policy read",
+      "status": "PASS",
+      "expectedText": "This assessment clears the gate.",
+      "observed": true
+    },
+    {
+      "name": "Three domains required for a two-domain assessment",
+      "status": "PASS",
+      "expectedText": "1 condition failed.",
+      "failureText": "signal count below policy",
+      "observed": true
+    },
+    {
+      "name": "Restore normal two-domain policy",
+      "status": "PASS",
+      "expectedText": "This assessment clears the gate.",
+      "observed": true
+    }
+  ],
+  "liveRunRendering": "PASS",
+  "nativeRun": {
+    "runId": "E2E-20260829202905-A3B71370",
+    "status": "PASS",
+    "transactionChecks": 18,
+    "readChecks": 6,
+    "readRetries": 0,
+    "finalState": "MATCHED / SELECTED / CONFIRMED"
+  },
+  "liveRunBrowserChecks": {
+    "brief": "E2E TEST ONLY - AuditMatch A3B71370",
+    "briefState": "MATCHED",
+    "candidate": "E2E TEST ONLY - Reference Candidate",
+    "candidateState": "SELECTED",
+    "verdict": "STRONG_MATCH",
+    "decisivenessBps": 9000,
+    "independentSourceDomains": 2,
+    "criterionVector": "MM",
+    "selectionState": "CONFIRMED",
+    "selectionAssessmentVersion": 3,
+    "policyResult": "SATISFIED",
+    "policyHeading": "This assessment clears the gate.",
+    "selectionUiState": "Selection already recorded",
+    "browserWarningsOrErrors": 0
+  },
+  "browserBlocker": null,
+  "manualRefreshResolution": "The user refreshed the existing localhost tab after agent-driven localhost reload was blocked by browser policy. The agent then inspected the refreshed tab without navigating around that policy.",
+  "walletExtensionTested": false,
+  "browserTransactionsSubmitted": 0,
+  "observedTransportFailures": [
+    {
+      "timestamp": "2026-08-28T19:54:18.050Z",
+      "message": "GenLayer RPC error (gen_call): Failed to fetch"
+    },
+    {
+      "timestamp": "2026-08-28T19:56:11.608Z",
+      "message": "GenLayer RPC error (gen_call): Failed to fetch"
+    }
+  ],
+  "transportFailureContext": "Browser refreshes overlapped with the unpaced native run; that run observed a 30-requests/minute limit. Live reads will not be run concurrently with the final native workflow.",
+  "draftLabelCorrection": "Corrected the draft-as-open display issue in src/model.ts and src/App.tsx. Six regression checks cover list/detail labels for all three brief states. No contract rules changed."
+}

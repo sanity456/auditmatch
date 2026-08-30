@@ -1,0 +1,281 @@
+{
+  "runId": "E2E-20260828190505-DD69629A",
+  "startedAt": "2026-08-28T19:05:05.148Z",
+  "status": "FAIL",
+  "network": "studionet",
+  "chainId": 61999,
+  "contractAddress": "0x6C651233ef4c6fC5476cC18Aa80cEEAD33b84D95",
+  "sourceSha256": "6514b063bceaf944ab891149b075273f18bcbdde2b2267ce235d6aced46be434",
+  "mockResponses": false,
+  "transactionContextOverrides": false,
+  "privateKeysPersisted": false,
+  "scope": "TEST ONLY: public-reference submission, not auditor identity or skill certification; no real procurement",
+  "walletSigning": "Ephemeral EIP-1193-compatible test provider; browser extension signing is not exercised",
+  "sources": [
+    {
+      "url": "https://raw.githubusercontent.com/crytic/slither/master/README.md",
+      "bytes": 34724,
+      "fullBodySha256": "f2065d562ac5f121a0509f35b0fa9d26d91fd0aa22bc2650a490557e4fd5ea87",
+      "assessedPrefixSha256": "d7b6b6e2a59287208bae9db59b88c3cd4cd1598986036c34dd45a5f13f0b86b2"
+    },
+    {
+      "url": "https://docs.soliditylang.org/en/latest/_sources/security-considerations.rst.txt",
+      "bytes": 21172,
+      "fullBodySha256": "87d7b917f9ae5a267daf9a4a07280a7f61e8858b9d7b75865170e564e347c4f2",
+      "assessedPrefixSha256": "d2e462e7fde6f9d562fbc16096693ac8510f373da1405389a555596a2197c592"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/crytic/slither/master/docs/src/tools/README.md",
+      "bytes": 3685,
+      "fullBodySha256": "a230dc98440b4a6993459dff3793453f2b9b85c965c0d47561e1884a2ac55f0a",
+      "assessedPrefixSha256": "a230dc98440b4a6993459dff3793453f2b9b85c965c0d47561e1884a2ac55f0a"
+    }
+  ],
+  "steps": [
+    {
+      "label": "Create test brief",
+      "functionName": "create_brief",
+      "hash": "0x8007f8105fcced31fb14df7ca267c582a78d4cb7ac1a9166df68f079bc69973b",
+      "expectedError": "",
+      "submittedAt": "2026-08-28T19:05:10.949Z",
+      "status": "FINALIZED",
+      "executionResult": "SUCCESS",
+      "executionMode": "NORMAL",
+      "leaderOnly": false,
+      "votes": {
+        "0x2eD9356362031BdB3899850A0381bdAB9e557E08": "idle",
+        "0x49Ec8A8FcB3075656461317d3F995CB4713D18E4": "agree",
+        "0x567865452AfC3BDE935532f851D8952eDb6c8a8D": "agree",
+        "0x7E0EF7B2B3bBa087df3e1B98B0d0142814D4e30f": "agree",
+        "0xF9ce48dc10ebA96080a5D25dab7DE36CcA26146E": "agree"
+      },
+      "leaderRounds": 2,
+      "diagnostic": {
+        "result": {
+          "raw": "ALQEMHg5ODQyYzZkYTI3NTEwYWFiOWFkMzNiOGYzNjlkMzg3YTMzOWE1NWVjOkUyRS0yMDI2MDgyODE5MDUwNS1ERDY5NjI5QQ==",
+          "status": "return",
+          "payload": {
+            "raw": [
+              180,
+              4,
+              48,
+              120,
+              57,
+              56,
+              52,
+              50,
+              99,
+              54,
+              100,
+              97,
+              50,
+              55,
+              53,
+              49,
+              48,
+              97,
+              97,
+              98,
+              57,
+              97,
+              100,
+              51,
+              51,
+              98,
+              56,
+              102,
+              51,
+              54,
+              57,
+              100,
+              51,
+              56,
+              55,
+              97,
+              51,
+              51,
+              57,
+              97,
+              53,
+              53,
+              101,
+              99,
+              58,
+              69,
+              50,
+              69,
+              45,
+              50,
+              48,
+              50,
+              54,
+              48,
+              56,
+              50,
+              56,
+              49,
+              57,
+              48,
+              53,
+              48,
+              53,
+              45,
+              68,
+              68,
+              54,
+              57,
+              54,
+              50,
+              57,
+              65
+            ],
+            "readable": "\"0x9842c6da27510aab9ad33b8f369d387a339a55ec:E2E-20260828190505-DD69629A\""
+          }
+        }
+      },
+      "finalizedAt": "2026-08-28T19:05:55.308Z",
+      "testResult": "PASS"
+    },
+    {
+      "label": "Add static-analysis reference criterion",
+      "functionName": "add_criterion",
+      "hash": "0xfc5223f4ccf415aec412e26b0a8105421b42e9cb50e8a1fcc9ea4c2bddffffe7",
+      "expectedError": "",
+      "submittedAt": "2026-08-28T19:05:56.538Z",
+      "status": "FINALIZED",
+      "executionResult": "SUCCESS",
+      "executionMode": "NORMAL",
+      "leaderOnly": false,
+      "votes": {
+        "0x5a148c341a5c76EDFf9A915F8D567551Fc276c37": "idle",
+        "0x7E0EF7B2B3bBa087df3e1B98B0d0142814D4e30f": "idle",
+        "0xDCEff558739d64A8BabaeeC882B3e8808e9BDb0A": "agree",
+        "0xF9ce48dc10ebA96080a5D25dab7DE36CcA26146E": "agree",
+        "0xaC93f1a42D9448eD28Db13Bef50460094034566B": "agree"
+      },
+      "leaderRounds": 2,
+      "diagnostic": {
+        "result": {
+          "raw": "AAA=",
+          "status": "return",
+          "payload": {
+            "raw": [
+              0
+            ],
+            "readable": "null"
+          }
+        }
+      },
+      "finalizedAt": "2026-08-28T19:06:30.453Z",
+      "testResult": "PASS"
+    },
+    {
+      "label": "Add reentrancy reference criterion",
+      "functionName": "add_criterion",
+      "hash": "0x513607d67154d2c41195b1fc39e4c35e77c328edbf780dc03d82954abe971f19",
+      "expectedError": "",
+      "submittedAt": "2026-08-28T19:06:31.681Z",
+      "status": "FINALIZED",
+      "executionResult": "SUCCESS",
+      "executionMode": "NORMAL",
+      "leaderOnly": false,
+      "votes": {
+        "0x5a148c341a5c76EDFf9A915F8D567551Fc276c37": "agree",
+        "0x77AcceF9eb2B11DA3D2071F2fBC2396AD941f697": "agree",
+        "0x98519402C343C310f9f08331BB85b51790856B55": "agree",
+        "0xaB4203368734587D1d9eaDD59f9f4a211329B19d": "idle",
+        "0xaC93f1a42D9448eD28Db13Bef50460094034566B": "idle"
+      },
+      "leaderRounds": 2,
+      "diagnostic": {
+        "result": {
+          "raw": "AAA=",
+          "status": "return",
+          "payload": {
+            "raw": [
+              0
+            ],
+            "readable": "null"
+          }
+        }
+      },
+      "finalizedAt": "2026-08-28T19:07:05.145Z",
+      "testResult": "PASS"
+    },
+    {
+      "label": "Reject non-owner criterion change",
+      "functionName": "add_criterion",
+      "hash": "0x10c79e00f69495da33ce308b54fc7c7f34231d73619cd979f0ede1a47826a38b",
+      "expectedError": "only_project_owner",
+      "submittedAt": "2026-08-28T19:07:06.455Z",
+      "status": "FINALIZED",
+      "executionResult": "ERROR",
+      "executionMode": "NORMAL",
+      "leaderOnly": false,
+      "votes": {
+        "0x49Ec8A8FcB3075656461317d3F995CB4713D18E4": "idle",
+        "0xA243FDBe37a36402c0F38Ee9E5D0E4a3b60a17D7": "idle",
+        "0xA42b0b5Bc3166AbF6D75bde91C71E69397C9fF24": "agree",
+        "0xF9ce48dc10ebA96080a5D25dab7DE36CcA26146E": "agree",
+        "0xaB4203368734587D1d9eaDD59f9f4a211329B19d": "agree"
+      },
+      "leaderRounds": 2,
+      "diagnostic": {
+        "result": {
+          "raw": "AVtFWFBFQ1RFRF0gb25seV9wcm9qZWN0X293bmVy",
+          "status": "rollback",
+          "payload": "[EXPECTED] only_project_owner"
+        }
+      },
+      "finalizedAt": "2026-08-28T19:07:50.758Z",
+      "testResult": "PASS"
+    },
+    {
+      "label": "Open test brief",
+      "functionName": "open_brief",
+      "hash": "0xc01d8ce64c1a11ede607fda02b815e53e08a2155a30d3abf73cc6e500bc4285f",
+      "expectedError": "",
+      "submittedAt": "2026-08-28T19:07:51.971Z",
+      "status": "FINALIZED",
+      "executionResult": "ERROR",
+      "executionMode": "NORMAL",
+      "leaderOnly": false,
+      "votes": {
+        "0x2eD9356362031BdB3899850A0381bdAB9e557E08": "agree",
+        "0x7E0EF7B2B3bBa087df3e1B98B0d0142814D4e30f": "idle",
+        "0x98519402C343C310f9f08331BB85b51790856B55": "agree",
+        "0xA243FDBe37a36402c0F38Ee9E5D0E4a3b60a17D7": "agree",
+        "0xF9ce48dc10ebA96080a5D25dab7DE36CcA26146E": "idle"
+      },
+      "leaderRounds": 2,
+      "diagnostic": {
+        "result": {
+          "raw": "AmlkbGU=",
+          "status": "contract_error",
+          "payload": "idle"
+        }
+      },
+      "finalizedAt": "2026-08-28T19:08:25.304Z"
+    }
+  ],
+  "readChecks": [],
+  "assessments": [],
+  "ownerAddress": "0x9842c6da27510aab9ad33b8f369d387a339a55ec",
+  "auditorAddress": "0xfc68ed592c533be37a616b4669f9ff79665e6e04",
+  "briefId": "0x9842c6da27510aab9ad33b8f369d387a339a55ec:E2E-20260828190505-DD69629A",
+  "applicationId": "0x9842c6da27510aab9ad33b8f369d387a339a55ec:E2E-20260828190505-DD69629A:APP:0xfc68ed592c533be37a616b4669f9ff79665e6e04",
+  "failedAt": "2026-08-28T19:08:25.312Z",
+  "error": {
+    "name": "AssertionError",
+    "message": "Open test brief: {\n  \"result\": {\n    \"raw\": \"AmlkbGU=\",\n    \"status\": \"contract_error\",\n    \"payload\": \"idle\"\n  }\n}\n\n'ERROR' !== 'SUCCESS'\n"
+  },
+  "diagnosis": {
+    "kind": "HARNESS_FALSE_NEGATIVE",
+    "affectedStep": "Open test brief",
+    "actualLeaderExecutionResult": "SUCCESS",
+    "actualBriefState": "OPEN",
+    "cause": "The last leader_receipt collection entry was mode=validator, vote=idle, execution_result=ERROR. The mode=leader proposal succeeded.",
+    "affectedAppFile": "src/transaction.ts",
+    "applicationImpact": "The app's execution guard has the same last-entry assumption; covered by tests/receipt-regression.test.ts."
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "checkedAt": "2026-08-28T19:26:25.464Z",
+  "network": "studionet",
+  "contractAddress": "0x6C651233ef4c6fC5476cC18Aa80cEEAD33b84D95",
+  "runId": "E2E-20260828191118-ABF16227",
+  "status": "END_TO_END_NOT_PASSED",
+  "policyReadReproduction": [
+    {
+      "variant": "explicit assessment ID",
+      "calldataBytes": 425,
+      "rlpBytes": 432,
+      "prefix": "0xf901adb901a916",
+      "canonicalRlpRoundTrip": true,
+      "error": "RLP string ends with 383 superfluous bytes"
+    },
+    {
+      "variant": "empty assessment ID (use latest)",
+      "calldataBytes": 298,
+      "rlpBytes": 305,
+      "prefix": "0xf9012eb9012a16",
+      "canonicalRlpRoundTrip": true,
+      "error": "RLP string ends with 301 superfluous bytes"
+    },
+    {
+      "variant": "short nonexistent application control",
+      "calldataBytes": 202,
+      "rlpBytes": 207,
+      "prefix": "0xf8cdb8ca160461",
+      "canonicalRlpRoundTrip": true,
+      "satisfied": false,
+      "failureReasons": [
+        "APPLICATION_NOT_FOUND"
+      ]
+    }
+  ],
+  "rawCalldataReadOnlyChecks": [
+    {
+      "policy": "normal (strong-only, 8500 BPS, two domains)",
+      "satisfied": true,
+      "failureReasons": []
+    },
+    {
+      "policy": "minimum confidence 10000 BPS",
+      "satisfied": false,
+      "failureReasons": [
+        "CONFIDENCE_BELOW_POLICY"
+      ]
+    },
+    {
+      "policy": "maximum assessment age one second",
+      "satisfied": false,
+      "failureReasons": [
+        "ASSESSMENT_TOO_OLD"
+      ]
+    }
+  ],
+  "browser": {
+    "realAssessmentDisplayed": true,
+    "verdict": "STRONG_MATCH",
+    "confidenceBps": 9000,
+    "independentDomains": 2,
+    "criterionCodes": "MM",
+    "policyEvaluationFailed": true,
+    "consoleError": "GenLayer RPC error (gen_call): RLP string ends with 383 superfluous bytes"
+  },
+  "receiptRegression": {
+    "tests": 7,
+    "passed": 3,
+    "failed": 4,
+    "command": "npm run test:receipts"
+  },
+  "contractModified": false,
+  "appFixesApplied": false,
+  "uncompletedLiveSteps": [
+    "policy-gated selection through the app",
+    "recheck",
+    "contest and resolution",
+    "final auditor selection",
+    "browser wallet extension signing"
+  ],
+  "upstreamParser": "https://github.com/genlayerlabs/genlayer-studio/blob/main/backend/protocol_rpc/transactions_parser.py#L604-L620"
+}
