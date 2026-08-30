@@ -12,9 +12,7 @@ const cloudflareSpaWorker = (): Plugin => ({
     this.emitFile({
       type: "asset",
       fileName: "server/index.js",
-      source: `const HTML_PLACEHOLDER = "__AUDITMATCH_ORIGIN__";
-
-export default {
+      source: `export default {
   async fetch(request, env) {
     if (!env?.ASSETS || typeof env.ASSETS.fetch !== "function") {
       return new Response("Static asset binding unavailable", {status: 500});
@@ -29,19 +27,7 @@ export default {
       response = await env.ASSETS.fetch(new Request(shellUrl.toString(), request));
     }
 
-    const contentType = response.headers.get("content-type") ?? "";
-    if (!contentType.includes("text/html")) return response;
-
-    const origin = new URL(request.url).origin;
-    const html = (await response.text()).replaceAll(HTML_PLACEHOLDER, origin);
-    const headers = new Headers(response.headers);
-    headers.delete("content-length");
-    headers.delete("etag");
-    return new Response(html, {
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-    });
+    return response;
   },
 };
 `,
