@@ -17,7 +17,7 @@ The contract is non-custodial. An assessment is evidence for a purpose-specific 
 - Rechecks, counter-evidence contests, immutable history, and project-owner-only selection.
 - Deterministic integration read: `evaluate_policy_view(application_id, policy_json, assessment_id)`.
 - Explicit acknowledgement before an exception policy can select an `INDETERMINATE` or `NO_MATCH` result.
-- MetaMask-only wallet discovery, StudioNet chain switching, transaction lifecycle cards, and account/chain-change handling.
+- EIP-6963 wallet discovery with a built-in chooser for MetaMask, OKX Wallet, Phantom EVM, and other EIP-1193 wallets; StudioNet chain switching, transaction lifecycle cards, and account/chain-change handling.
 - Responsive React interface with two deliberately distinct modes:
   - **Preview** uses fictional sample identities and simulated local outcomes. It never fetches, signs, or writes.
   - **StudioNet** immediately shows a dated, read-only snapshot of finalized release-QA records while a paced live refresh runs against the public RPC.

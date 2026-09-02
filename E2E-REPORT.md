@@ -4,6 +4,8 @@ Date: August 30, 2026 (UTC); passing native run completed August 29
 
 Result: **PASS.** Atomic v2 passes contract validation, frontend one-write regression, five-validator integration, exact StudioNet deployment verification, a live one-transaction publish smoke, the final MetaMask one-approval flow, and a finalized application → assessment → policy → selection journey. The original v1 release retains the complete real-source workflow, browser policy verification, MetaMask connection, and six-write wallet baseline as historical evidence. Atomic v2 replaces that six-write publication path with one zero-value transaction and cannot leave a partial draft through the primary app flow.
 
+The current frontend adds multi-wallet EIP-6963 discovery and a wallet chooser. Automated coverage verifies MetaMask, OKX Wallet, Phantom EVM, generic EIP-1193 providers, provider deduplication, StudioNet switching/addition, and connection availability during the background registry refresh. The historical approved on-chain browser journey below used MetaMask; no claim is made that the user approved the same transaction through every supported wallet.
+
 ## Changes verified locally
 
 - Receipt handling selects the most recent actual leader, ignoring trailing idle-validator entries; missing or failed leader execution still fails closed.

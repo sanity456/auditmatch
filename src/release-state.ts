@@ -28,7 +28,7 @@ export const STUDIONET_DEPLOYMENT_TRANSACTION =
 
 const ACTIVITY_COPY: Record<Exclude<AppActivity, "idle">, string> = {
   "loading-registry": "Loading the StudioNet registry…",
-  "connecting-wallet": "Connecting MetaMask to GenLayer StudioNet…",
+  "connecting-wallet": "Connecting your wallet to GenLayer StudioNet…",
   "publishing-brief": "Publishing the brief and frozen criteria…",
   "submitting-application": "Submitting the wallet-bound evidence application…",
   assessing: "Waiting for validator consensus and finality…",
@@ -42,6 +42,10 @@ export function activityCopy(activity: AppActivity): string {
 }
 
 export function canChangeDataMode(activity: AppActivity): boolean {
+  return activity === "idle" || activity === "loading-registry";
+}
+
+export function canConnectWallet(activity: AppActivity): boolean {
   return activity === "idle" || activity === "loading-registry";
 }
 

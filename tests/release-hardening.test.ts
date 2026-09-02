@@ -6,6 +6,7 @@ import {
   activityCopy,
   awaitingSignature,
   canChangeDataMode,
+  canConnectWallet,
   evidenceContextCopy,
   policyAcceptsException,
   registryStatusCopy,
@@ -74,6 +75,13 @@ test("data mode remains switchable while the live registry loads", () => {
   assert.equal(canChangeDataMode("loading-registry"), true);
   assert.equal(canChangeDataMode("publishing-brief"), false);
   assert.equal(canChangeDataMode("assessing"), false);
+});
+
+test("wallet discovery remains available while the live registry loads", () => {
+  assert.equal(canConnectWallet("idle"), true);
+  assert.equal(canConnectWallet("loading-registry"), true);
+  assert.equal(canConnectWallet("publishing-brief"), false);
+  assert.equal(canConnectWallet("assessing"), false);
 });
 
 test("Preview and StudioNet evidence labels describe their actual data path", () => {

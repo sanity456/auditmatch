@@ -13,7 +13,6 @@ import {createPacedReader} from "./read-queue";
 import {readStudioContract} from "./studio-read";
 import {assertSuccessfulStudioExecution} from "./transaction";
 import {
-  requireMetaMaskProvider,
   walletFromAccounts,
   watchWalletProvider,
 } from "./wallet-provider";
@@ -81,8 +80,7 @@ function errorCode(cause: unknown): number | undefined {
   return errorCode(candidate.cause);
 }
 
-export async function connectWallet(): Promise<WalletState> {
-  const provider = await requireMetaMaskProvider();
+export async function connectWallet(provider: EIP1193Provider): Promise<WalletState> {
   const accounts = await provider.request({method: "eth_requestAccounts"});
   const wallet = walletFromAccounts(accounts);
   if (!wallet) {
@@ -131,7 +129,7 @@ async function write(
 ): Promise<Hash> {
   if (!HAS_LIVE_DEPLOYMENT) throw new Error("AuditMatch has not been deployed to StudioNet");
   const provider = activeWalletProvider;
-  if (!provider) throw new Error("Reconnect MetaMask before submitting a StudioNet transaction");
+  if (!provider) throw new Error("Reconnect your EVM wallet before submitting a StudioNet transaction");
   const client = createClient({
     chain: studionet,
     account: wallet.address,

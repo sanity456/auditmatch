@@ -20,6 +20,7 @@ import {
   activityCopy,
   awaitingSignature,
   canChangeDataMode,
+  canConnectWallet,
   evidenceContextCopy,
   policyAcceptsException,
   registryStatusCopy,
@@ -38,6 +39,7 @@ import {
   STUDIONET_SNAPSHOT_VERIFIED_AT,
   buildVerifiedStudioNetSnapshot,
 } from "./studionet-snapshot";
+import type {WalletProviderOption} from "./wallet-provider";
 import type {
   Application,
   Assessment,
@@ -51,6 +53,7 @@ import type {
 
 type Page = "marketplace" | "post" | "policy" | "expansion";
 type Mode = "preview" | "live";
+type WalletAction = "idle" | "discovering" | "connecting";
 
 type NewBriefDraft = {
   key: string;
@@ -168,6 +171,8 @@ function Header({
   page,
   mode,
   wallet,
+  walletName,
+  walletAction,
   role,
   activity,
   onNavigate,
@@ -177,13 +182,15 @@ function Header({
   page: Page;
   mode: Mode;
   wallet?: WalletState;
+  walletName: string;
+  walletAction: WalletAction;
   role: WalletRole;
   activity: AppActivity;
   onNavigate: (page: Page) => void;
   onMode: (mode: Mode) => void;
   onConnect: () => void;
 }) {
-  const busy = activity !== "idle";
+  const walletDisabled = walletAction !== "idle" || !canConnectWallet(activity);
   const modeChangeDisabled = !canChangeDataMode(activity);
   const nav: Array<{id: Page; label: string}> = [
     {id: "marketplace", label: "Matches"},
@@ -233,19 +240,21 @@ function Header({
           <button
             className="wallet-button"
             type="button"
-            aria-label={wallet ? `Connected wallet ${shortAddress(wallet.address)}. ${role}` : "Connect MetaMask"}
-            disabled={busy}
+            aria-label={wallet ? `Connected ${walletName || "wallet"} ${shortAddress(wallet.address)}. ${role}` : "Connect wallet"}
+            disabled={walletDisabled}
             onClick={onConnect}
           >
             <Icon name="wallet" />
-            {activity === "connecting-wallet" ? (
+            {walletAction === "discovering" ? (
+              <span>Finding wallets…</span>
+            ) : walletAction === "connecting" ? (
               <span>Connecting…</span>
             ) : wallet ? (
               <span className="wallet-identity">
                 <strong>{shortAddress(wallet.address)}</strong>
                 <small>{role}</small>
               </span>
-            ) : "Connect MetaMask"}
+            ) : "Connect wallet"}
           </button>
         ) : (
           <span className="preview-chip"><span /> No chain writes</span>
@@ -305,7 +314,7 @@ function TransactionTracker({
 }) {
   if (!transaction) return null;
   const statusCopy = {
-    AWAITING_SIGNATURE: "Confirm in MetaMask",
+    AWAITING_SIGNATURE: "Confirm in your wallet",
     FINALIZING: "Submitted · waiting for StudioNet finality",
     FINALIZED: "Finalized · execution succeeded",
     FAILED: "Transaction not completed",
@@ -976,6 +985,44 @@ function ApplicationDialog({
   );
 }
 
+function WalletDialog({
+  wallets,
+  onClose,
+  onSelect,
+}: {
+  wallets: WalletProviderOption[];
+  onClose: () => void;
+  onSelect: (wallet: WalletProviderOption) => void;
+}) {
+  return (
+    <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section className="dialog wallet-dialog" role="dialog" aria-modal="true" aria-labelledby="wallet-dialog-title">
+        <button className="dialog-close" type="button" aria-label="Close wallet chooser" onClick={onClose}><Icon name="close" /></button>
+        <span className="section-kicker"><span>Wallet</span> StudioNet · Chain 61999</span>
+        <h2 id="wallet-dialog-title">Choose an EVM wallet.</h2>
+        <p>AuditMatch requests only your public address until you approve a transaction. It never asks for a seed phrase or private key.</p>
+        {wallets.length > 0 ? (
+          <div className="wallet-options" aria-label="Detected EVM wallets">
+            {wallets.map((option) => (
+              <button className="wallet-option" type="button" key={option.id} onClick={() => onSelect(option)}>
+                <span className="wallet-option-badge" aria-hidden="true">{option.badge}</span>
+                <span><strong>{option.name}</strong><small>Detected browser wallet · EVM</small></span>
+                <Icon name="arrow" />
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="wallet-empty">
+            <strong>No EVM wallet detected in this browser.</strong>
+            <p>Open AuditMatch in a normal browser tab where MetaMask, OKX Wallet, or Phantom is installed and enabled. Embedded previews often block wallet injection.</p>
+          </div>
+        )}
+        <p className="wallet-dialog-note">Compatible wallets must support EIP-1193 and allow the GenLayer StudioNet custom network.</p>
+      </section>
+    </div>
+  );
+}
+
 function Footer() {
   return (
     <footer>
@@ -996,6 +1043,10 @@ export default function App() {
   const [selectedBriefId, setSelectedBriefId] = useState(initialBriefs[0]?.id ?? "");
   const [selectedApplicationId, setSelectedApplicationId] = useState(initialPending?.id ?? initialBriefs[0]?.applications[0]?.id ?? "");
   const [wallet, setWallet] = useState<WalletState>();
+  const [walletName, setWalletName] = useState("");
+  const [walletAction, setWalletAction] = useState<WalletAction>("idle");
+  const [walletOptions, setWalletOptions] = useState<WalletProviderOption[]>([]);
+  const [showWalletChooser, setShowWalletChooser] = useState(false);
   const [policy, setPolicy] = useState<Policy>(DEFAULT_POLICY);
   const [policyResult, setPolicyResult] = useState<PolicyResult>();
   const [activity, setActivity] = useState<AppActivity>("idle");
@@ -1029,14 +1080,16 @@ export default function App() {
           setWallet(nextWallet);
           setPolicyResult(undefined);
           setToast(nextWallet
-            ? `MetaMask switched to ${shortAddress(nextWallet.address)}.`
-            : "MetaMask disconnected from AuditMatch.");
+            ? `${walletName || "Wallet"} switched to ${shortAddress(nextWallet.address)}.`
+            : `${walletName || "Wallet"} disconnected from AuditMatch.`);
+          if (!nextWallet) setWalletName("");
         },
         onChainChanged: (chainId) => {
           if (chainId === STUDIONET_CHAIN_ID) return;
           setWallet(undefined);
+          setWalletName("");
           setPolicyResult(undefined);
-          setToast("MetaMask left GenLayer StudioNet. Reconnect before sending a transaction.");
+          setToast("Your wallet left GenLayer StudioNet. Reconnect before sending a transaction.");
         },
       });
     });
@@ -1044,7 +1097,7 @@ export default function App() {
       disposed = true;
       unsubscribe();
     };
-  }, [mode, wallet?.address]);
+  }, [mode, wallet?.address, walletName]);
 
   const beginTransaction = (action: string) => setTransaction(awaitingSignature(action));
   const submittedTransaction = (hash: string) => {
@@ -1131,17 +1184,33 @@ export default function App() {
     }
   };
 
-  const connect = async () => {
-    setActivity("connecting-wallet");
+  const openWalletChooser = async () => {
+    if (walletAction !== "idle" || !canConnectWallet(activity)) return;
+    setWalletAction("discovering");
+    try {
+      const {discoverWalletProviders} = await import("./wallet-provider");
+      setWalletOptions(await discoverWalletProviders());
+      setShowWalletChooser(true);
+    } catch (cause) {
+      setToast(errorMessage(cause, "Could not inspect the available browser wallets."));
+    } finally {
+      setWalletAction("idle");
+    }
+  };
+
+  const connect = async (option: WalletProviderOption) => {
+    setShowWalletChooser(false);
+    setWalletAction("connecting");
     try {
       const {connectWallet} = await import("./genlayer");
-      const connected = await connectWallet();
+      const connected = await connectWallet(option.provider);
       setWallet(connected);
-      setToast(`Connected ${shortAddress(connected.address)} to GenLayer StudioNet.`);
+      setWalletName(option.name);
+      setToast(`Connected ${option.name} ${shortAddress(connected.address)} to GenLayer StudioNet.`);
     } catch (cause) {
       setToast(errorMessage(cause, "Wallet connection failed."));
     } finally {
-      setActivity("idle");
+      setWalletAction("idle");
     }
   };
 
@@ -1289,7 +1358,7 @@ export default function App() {
         const activeWallet = requireWallet();
         if (!activeWallet) return;
         if (activeWallet.address.toLowerCase() !== selectedBrief.projectOwner.toLowerCase()) {
-          setToast(`Switch MetaMask to the project owner ${shortAddress(selectedBrief.projectOwner)} before recording a selection.`);
+          setToast(`Switch your wallet to the project owner ${shortAddress(selectedBrief.projectOwner)} before recording a selection.`);
           return;
         }
         beginTransaction("Auditor selection");
@@ -1387,7 +1456,7 @@ export default function App() {
         const activeWallet = requireWallet();
         if (!activeWallet) return;
         if (activeWallet.address.toLowerCase() === selectedBrief.projectOwner.toLowerCase()) {
-          setToast("The project owner cannot apply to their own brief. Switch MetaMask to an applicant wallet.");
+          setToast("The project owner cannot apply to their own brief. Switch to an applicant wallet.");
           return;
         }
         beginTransaction("Evidence application");
@@ -1412,7 +1481,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <Header page={page} mode={mode} wallet={wallet} role={currentWalletRole} activity={activity} onNavigate={navigate} onMode={changeMode} onConnect={connect} />
+      <Header page={page} mode={mode} wallet={wallet} walletName={walletName} walletAction={walletAction} role={currentWalletRole} activity={activity} onNavigate={navigate} onMode={changeMode} onConnect={openWalletChooser} />
       {mode === "preview" && activity !== "loading-registry" && <div className="preview-banner"><strong>Interactive preview</strong><span>All actions below are simulated locally. No wallet prompt and no blockchain state change.</span></div>}
       {(mode === "live" || activity === "loading-registry") && <LiveActivityBar activity={activity} registrySource={registrySource} />}
       {mode === "live" && <StudioNetVerification registrySource={registrySource} />}
@@ -1422,6 +1491,7 @@ export default function App() {
       {page === "expansion" && <Expansion />}
       <Footer />
       {showApply && selectedBrief && <ApplicationDialog brief={selectedBrief} mode={mode} activity={activity} onClose={() => setShowApply(false)} onSubmit={submitApplication} />}
+      {showWalletChooser && <WalletDialog wallets={walletOptions} onClose={() => setShowWalletChooser(false)} onSelect={connect} />}
       {mode === "live" && <TransactionTracker transaction={transaction} onDismiss={() => setTransaction(undefined)} />}
       {toast && <div className="toast" role="status"><Icon name="spark" /><span>{toast}</span><button type="button" aria-label="Dismiss notification" onClick={() => setToast("")}><Icon name="close" /></button></div>}
     </div>

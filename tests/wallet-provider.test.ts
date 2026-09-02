@@ -3,8 +3,9 @@ import test from "node:test";
 
 import type {EIP1193Provider} from "viem";
 
+import {connectWallet} from "../src/genlayer";
 import {
-  chooseMetaMaskProvider,
+  collectWalletProviders,
   numericChainId,
   walletFromAccounts,
   watchWalletProvider,
@@ -17,30 +18,98 @@ function provider(flags: Record<string, unknown> = {}): EIP1193Provider {
   } as unknown as EIP1193Provider;
 }
 
-test("an exact EIP-6963 MetaMask announcement wins over Phantom", () => {
-  const phantom = provider({isPhantom: true});
+test("EIP-6963 discovers MetaMask, OKX, Phantom EVM, and other wallets", () => {
   const metaMask = provider({isMetaMask: true});
-  assert.equal(chooseMetaMaskProvider([
-    {info: {name: "Phantom", rdns: "app.phantom"}, provider: phantom},
-    {info: {name: "MetaMask", rdns: "io.metamask"}, provider: metaMask},
-  ], phantom), metaMask);
+  const okx = provider({isOkxWallet: true});
+  const phantom = provider({isPhantom: true});
+  const rabby = provider();
+  const options = collectWalletProviders([
+    {info: {uuid: "phantom", name: "Phantom", rdns: "app.phantom"}, provider: phantom},
+    {info: {uuid: "rabby", name: "Rabby Wallet", rdns: "io.rabby"}, provider: rabby},
+    {info: {uuid: "okx", name: "OKX", rdns: "com.okex.wallet"}, provider: okx},
+    {info: {uuid: "metamask", name: "MetaMask", rdns: "io.metamask"}, provider: metaMask},
+  ]);
+
+  assert.deepEqual(options.map(({id, name, rdns, badge}) => ({id, name, rdns, badge})), [
+    {id: "metamask", name: "MetaMask", rdns: "io.metamask", badge: "M"},
+    {id: "okx", name: "OKX Wallet", rdns: "com.okex.wallet", badge: "OKX"},
+    {id: "phantom", name: "Phantom (EVM)", rdns: "app.phantom", badge: "P"},
+    {id: "rabby", name: "Rabby Wallet", rdns: "io.rabby", badge: "EVM"},
+  ]);
 });
 
-test("a MetaMask entry in the injected provider list is selected", () => {
-  const phantom = provider({isPhantom: true});
+test("announced and legacy-injected copies of the same provider are deduplicated", () => {
   const metaMask = provider({isMetaMask: true});
-  const injected = provider({isPhantom: true, providers: [phantom, metaMask]});
-  assert.equal(chooseMetaMaskProvider([], injected as EIP1193Provider & {providers: unknown[]}), metaMask);
-});
-
-test("Phantom is never accepted as the fallback provider", () => {
   const phantom = provider({isPhantom: true});
-  assert.equal(chooseMetaMaskProvider([], phantom), undefined);
+  const options = collectWalletProviders(
+    [{info: {uuid: "metamask", name: "MetaMask", rdns: "io.metamask"}, provider: metaMask}],
+    {
+      ethereum: provider({providers: [metaMask, phantom]}) as EIP1193Provider & {providers: unknown[]},
+      phantom: {ethereum: phantom},
+    },
+  );
+
+  assert.deepEqual(options.map(({name}) => name), ["MetaMask", "Phantom (EVM)"]);
 });
 
-test("a provider claiming both MetaMask and Phantom is rejected", () => {
-  const ambiguous = provider({isMetaMask: true, isPhantom: true});
-  assert.equal(chooseMetaMaskProvider([], ambiguous), undefined);
+test("direct OKX and Phantom namespaces work without window.ethereum", () => {
+  const okx = provider();
+  const phantom = provider({isPhantom: true});
+  const options = collectWalletProviders([], {
+    okxwallet: okx,
+    phantom: {ethereum: phantom},
+  });
+
+  assert.deepEqual(options.map(({name}) => name), ["OKX Wallet", "Phantom (EVM)"]);
+});
+
+test("a generic EIP-1193 browser wallet remains usable", () => {
+  const injected = provider();
+  const options = collectWalletProviders([], {ethereum: injected});
+  assert.equal(options.length, 1);
+  assert.equal(options[0].name, "Browser EVM wallet");
+  assert.equal(options[0].provider, injected);
+});
+
+test("a selected EIP-1193 wallet connects and switches to StudioNet", async () => {
+  const calls: string[] = [];
+  const selected = provider({
+    request: async ({method}: {method: string}) => {
+      calls.push(method);
+      if (method === "eth_requestAccounts") {
+        return ["0x3333333333333333333333333333333333333333"];
+      }
+      return undefined;
+    },
+  });
+
+  assert.deepEqual(await connectWallet(selected), {
+    address: "0x3333333333333333333333333333333333333333",
+  });
+  assert.deepEqual(calls, ["eth_requestAccounts", "wallet_switchEthereumChain"]);
+});
+
+test("a selected wallet can add StudioNet when the custom chain is unknown", async () => {
+  const calls: string[] = [];
+  const selected = provider({
+    request: async ({method}: {method: string}) => {
+      calls.push(method);
+      if (method === "eth_requestAccounts") {
+        return ["0x4444444444444444444444444444444444444444"];
+      }
+      if (method === "wallet_switchEthereumChain") {
+        throw Object.assign(new Error("Unknown chain"), {code: 4902});
+      }
+      return undefined;
+    },
+  });
+
+  await connectWallet(selected);
+  assert.deepEqual(calls, [
+    "eth_requestAccounts",
+    "wallet_switchEthereumChain",
+    "wallet_addEthereumChain",
+  ]);
 });
 
 test("account and chain payloads are normalized defensively", () => {
@@ -54,7 +123,7 @@ test("account and chain payloads are normalized defensively", () => {
   assert.equal(numericChainId("wrong"), undefined);
 });
 
-test("MetaMask account changes update the app and listeners are removed", () => {
+test("wallet account changes update the app and listeners are removed", () => {
   const listeners = new Map<string, (value: unknown) => void>();
   const evented = provider({
     on: (event: string, listener: (value: unknown) => void) => listeners.set(event, listener),
