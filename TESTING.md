@@ -2,7 +2,7 @@
 
 ## Fast checks
 
-Run GenVM lint before tests. `npm run verify` runs the frontend model/status checks, receipt-safety checks, StudioNet read regressions, pacing/retry/timeout checks, six wallet-provider and account-change checks, eight release-hardening and verified-snapshot checks, the atomic one-write regression, and the production build. The 12-test Python direct suite covers atomic validation and rollback safety, legacy compatibility, roles, policy gating, history, expiry, and malformed model/source responses.
+Run GenVM lint before tests. `npm run verify` runs the frontend model/status checks, receipt-safety checks, StudioNet read regressions, pacing/retry/timeout checks, eight wallet-provider and account-change checks, nine release-hardening and verified-snapshot checks, the atomic one-write regression, and the production build. The 12-test Python direct suite covers atomic validation and rollback safety, legacy compatibility, roles, policy gating, history, expiry, and malformed model/source responses.
 
 ```powershell
 genvm-lint check contracts/audit_match.py --json
@@ -11,6 +11,16 @@ npm run verify
 ```
 
 The GLSim integration test uses five mocked validators and mocked web/model responses. It exercises atomic publication through the complete assessment and selection workflow as a deterministic consensus regression; it is not proof of real external fetching.
+
+## Expiry regression
+
+The expiry regression pins assessment issuance immediately before the intelligent transaction, asserts the stored expiry, advances the effective chain time to exactly `expires_at_unix + 1`, and checks the entire deterministic policy response. This avoids relying on time inherited from deployment setup. Run it with `-s` to print the issue time, expected expiry, effective chain time, policy, result payload, and post-read history status:
+
+```powershell
+pytest tests/direct/test_audit_match.py::test_expired_assessment_fails_without_mutating_history -q -s
+```
+
+The full diagnosis and submitted-deployment proof are recorded in `STEWARD-RESPONSE.md`.
 
 ## Real StudioNet workflow
 

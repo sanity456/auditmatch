@@ -31,7 +31,7 @@ The current frontend adds multi-wallet EIP-6963 discovery and a wallet chooser. 
 | Five-validator GLSim integration | 1 passed |
 | Typecheck and production build | Passed |
 
-Total: 78 local automated checks passed, plus one five-validator integration, GenVM lint, and the production build (79 automated tests including integration).
+Total: 81 local automated checks passed, plus one five-validator integration, GenVM lint, and the production build (82 automated tests including integration).
 
 ## Atomic v2 verification
 
@@ -92,7 +92,7 @@ The browser confirmed that the previously failing policy query now passes and th
 - Every persistent test brief and candidate is clearly labeled `E2E TEST ONLY`. The criteria concern submitted public reference material, not a real auditor's identity, authorship, expertise, independence, or availability.
 - Automated test keys exist only in memory. The production QA wallet remained inside MetaMask; no seed phrase or private key was exposed. The legacy six-write baseline, atomic v2 smoke, and MetaMask atomic publish all had zero transfer value; no token transfer or real procurement occurred.
 - Permanent test records are not deleted; earlier failed-run keys were not retained.
-- Actual browser wallet-extension connection, StudioNet readiness, project/applicant account switching, transaction approval, assessment, policy, selection, and the atomic one-write brief publication path were exercised with MetaMask. The resulting v2 brief and all four frozen criteria were verified by direct finalized-state reads. Six automated provider/account-change checks pass; the wallet-extension rejection screen remains untested.
+- Actual browser wallet-extension connection, StudioNet readiness, project/applicant account switching, transaction approval, assessment, policy, selection, and the atomic one-write brief publication path were exercised with MetaMask. The resulting v2 brief and all four frozen criteria were verified by direct finalized-state reads. Eight automated provider/account-change checks pass; the wallet-extension rejection screen remains untested.
 - The frontend is publicly hosted at `https://auditmatch.blazekingsley2.chatgpt.site` and remains available locally at `http://127.0.0.1:5175/` for development.
 - The public RPC is rate-limited. The UI now renders a dated verified snapshot immediately and performs one paced background refresh; production-scale indexing and wallet-rejection QA remain separate expansion work.
 

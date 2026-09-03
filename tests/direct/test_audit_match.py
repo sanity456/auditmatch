@@ -9,6 +9,11 @@ URL_PROFILE = "https://cindersec.example.com/.well-known/auditor.json"
 URL_COUNTER = "https://security.example.net/disclosures/cinder-seaglass-conflict"
 PROMPT = "Assess whether one security auditor fits one project audit brief"
 VALIDITY = 30 * 24 * 60 * 60
+EXPIRY_REGRESSION_ISSUED_AT = "2026-08-27T12:00:00Z"
+EXPIRY_REGRESSION_ISSUED_AT_UNIX = 1787832000
+EXPIRY_REGRESSION_EXPIRES_AT_UNIX = 1790424000
+EXPIRY_REGRESSION_CHAIN_TIME = "2026-09-26T12:00:01Z"
+EXPIRY_REGRESSION_CHAIN_TIME_UNIX = 1790424001
 
 
 def _brief_criteria():
@@ -277,13 +282,41 @@ def test_expired_assessment_fails_without_mutating_history(
     brief_id = _open_brief(contract, direct_vm, direct_alice)
     application_id = _apply(contract, direct_vm, direct_bob, brief_id)
     _mock_assessment(direct_vm)
+
+    # Pin issuance immediately before the assessment instead of relying on the
+    # deployment fixture's clock. This remains deterministic across runners.
+    direct_vm.warp(EXPIRY_REGRESSION_ISSUED_AT)
     assessment_id = contract.assess_application(application_id)
-    direct_vm.warp("2026-09-26T12:00:01Z")
+    assessment = contract.get_assessment(assessment_id)
+    assert assessment["issued_at_unix"] == EXPIRY_REGRESSION_ISSUED_AT_UNIX
+    assert assessment["expires_at_unix"] == EXPIRY_REGRESSION_EXPIRES_AT_UNIX
+
+    direct_vm.warp(EXPIRY_REGRESSION_CHAIN_TIME)
 
     result = contract.evaluate_policy_view(application_id, _policy(), assessment_id)
-    assert result["satisfied"] is False
-    assert "ASSESSMENT_EXPIRED" in result["failure_reasons"]
-    assert "ASSESSMENT_TOO_OLD" in result["failure_reasons"]
+    assert EXPIRY_REGRESSION_CHAIN_TIME_UNIX == assessment["expires_at_unix"] + 1
+    print(
+        "EXPIRY_REGRESSION_EVIDENCE="
+        + json.dumps(
+            {
+                "issued_at_unix": assessment["issued_at_unix"],
+                "expected_expiry_unix": assessment["expires_at_unix"],
+                "effective_chain_time_unix": EXPIRY_REGRESSION_CHAIN_TIME_UNIX,
+                "policy": json.loads(_policy()),
+                "result": result,
+                "history_status_after_view": contract.get_assessment(assessment_id)[
+                    "status"
+                ],
+            },
+            sort_keys=True,
+        )
+    )
+    assert result == {
+        "satisfied": False,
+        "failure_reasons": ["ASSESSMENT_EXPIRED", "ASSESSMENT_TOO_OLD"],
+        "assessment_id": assessment_id,
+        "verdict": "STRONG_MATCH",
+    }
     assert contract.get_assessment(assessment_id)["status"] == "ACTIVE"
 
 

@@ -54,9 +54,9 @@ No wallet is needed for this judge path. A wallet is required only for a new tra
 - A zero-value StudioNet smoke and a separate MetaMask approval both finalized atomic four-criterion publications with three agreeing validators.
 - The current v2 registry was read back as 2 briefs, 1 application, and 1 assessment.
 - The finalized `VAULT-Q4` journey is `MATCHED` / `SELECTED` / `CONFIRMED`. Its assessment is intentionally inconclusive: `INDETERMINATE`, 6000 BPS, 2 independent domains, `UUUU`. The default strict policy fails with `VERDICT_NOT_ACCEPTED` and `CONFIDENCE_BELOW_POLICY`; a separately configured test policy passes.
-- 78 local automated checks plus one five-validator integration pass, along with GenVM lint and a production build.
+- 81 local automated checks plus one five-validator integration pass, along with GenVM lint and a production build.
 
-Full evidence: `E2E-REPORT.md`, `TESTING.md`, `deployments/studionet.json`, and `test-results/studionet/`.
+Full evidence: `E2E-REPORT.md`, `TESTING.md`, `STEWARD-RESPONSE.md`, `deployments/studionet.json`, and `test-results/studionet/`.
 
 ## Safety and disclosure
 
