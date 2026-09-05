@@ -45,16 +45,21 @@ The assessment status after the view remains `ACTIVE`; expiry affects policy eli
 
 ## Verification
 
-The corrected regression passes on Windows and is also run by the public GitHub Actions workflow on Ubuntu Linux. The workflow then runs the complete 12-test direct suite, GenVM lint, all frontend/release tests, type checking, and the production build. The workflow summary publishes the exact expiry evidence payload from its Linux run.
+The corrected regression passes on Windows and in a public Ubuntu Linux run. One immutable GitHub Actions run ties every required proof to repository commit `478c19a7b00eb67d593238424177865376eeba07`:
 
-- Public verification workflow: https://github.com/sanity456/auditmatch/actions/workflows/verification.yml
+- Combined successful run: https://github.com/sanity456/auditmatch/actions/runs/33976304625
+- Linux expiry regression and clean 12-test direct suite: https://github.com/sanity456/auditmatch/actions/runs/33976304625/job/101333492260
+- Submitted StudioNet deployment, schema, and source proof: https://github.com/sanity456/auditmatch/actions/runs/33976304625/job/101333492311
+- All frontend/release tests, type checking, and production build: https://github.com/sanity456/auditmatch/actions/runs/33976304625/job/101333492352
+
+The Linux job printed the exact payload above and then reported `12 passed`. GenVM lint passed before the focused regression. All three jobs completed successfully.
 
 The contract source was not changed, so no replacement deployment was necessary. A fresh read-only deployment verification confirmed that the submitted StudioNet deployment is finalized, executed successfully, exposes the same 25-method schema, and has the same source as this repository:
 
 - Contract: `0xD0f429d3Ca60Db86C6bf6d82E4Da286a0E498ac2`
 - Deployment transaction: `0x9d2b0a398f37a96d859fb93e69907dab8111d82b26e6227231d6103c8ba8516b`
 - Source SHA-256: `b3d94efe1128b1c8840d210350ee0cc05b302195a9da40f73e6bf559f70dec18`
-- Verification time: `2026-09-03T08:30:19.192Z`
+- Public CI verification time: `2026-09-05T15:56:37.901Z`
 
 Reproduce locally:
 
