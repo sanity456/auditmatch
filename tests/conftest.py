@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.windows_compat import install
+from tests.direct_compat import install
 
 
 CONTRACT_PATH = Path(__file__).resolve().parents[1] / "contracts" / "audit_match.py"

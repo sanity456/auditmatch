@@ -14,13 +14,15 @@ The GLSim integration test uses five mocked validators and mocked web/model resp
 
 ## Expiry regression
 
-The expiry regression pins assessment issuance immediately before the intelligent transaction, asserts the stored expiry, advances the effective chain time to exactly `expires_at_unix + 1`, and checks the entire deterministic policy response. This avoids relying on time inherited from deployment setup. Run it with `-s` to print the issue time, expected expiry, effective chain time, policy, result payload, and post-read history status:
+The expiry regression sets assessment issuance immediately before the intelligent transaction, derives expected expiry from the timestamp actually stored by the contract, advances effective chain time to exactly `expires_at_unix + 1`, and checks the entire deterministic policy response. `tests/direct_compat.py` synchronizes `direct_vm.warp(...)` with the SDK's cached contract message on both Linux and Windows, compensating for the missing datetime refresh in the pinned `genlayer-test==0.29.2`. Run the regression with `-s` to print the issue time, expected expiry, effective chain time, policy, result payload, and post-read history status:
 
 ```powershell
 pytest tests/direct/test_audit_match.py::test_expired_assessment_fails_without_mutating_history -q -s
 ```
 
 The full diagnosis and submitted-deployment proof are recorded in `STEWARD-RESPONSE.md`.
+
+The public `AuditMatch verification` GitHub Actions workflow runs this focused regression and the complete direct suite on Ubuntu Linux, then runs every frontend/release check and the production build in a separate job.
 
 ## Real StudioNet workflow
 

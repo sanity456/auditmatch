@@ -2,15 +2,15 @@
 
 ## Finding
 
-This was a test time-fixture defect, not a contract defect. The submitted contract correctly rejects an assessment only when the effective chain time is later than the assessment's stored `expires_at_unix` value.
+This was a cross-platform direct-test harness defect, not a contract defect. The submitted contract correctly rejects an assessment only when the effective chain time is later than the assessment's stored `expires_at_unix` value.
 
-The former regression set a hard-coded evaluation time but did not pin or assert the assessment's issuance time inside the test. It inherited time from the shared deployment fixture. If a runner created the assessment on September 3, 2026 at 12:00:00 UTC, for example, its 30-day expiry would be October 3 at 12:00:00 UTC. Evaluating it at the former hard-coded September 26 time would correctly return `satisfied: true` because the record was still seven days from expiry. The failing test therefore called a still-valid assessment expired.
+The repository pins `genlayer-test==0.29.2`. After a contract is loaded, that version's `VMContext._refresh_gl_message` refreshes sender and origin but does not synchronize its updated `_datetime` into the SDK's cached `gl.message_raw["datetime"]`. The repository already compensated for that behavior on Windows, but the compatibility code returned early on Linux. Consequently, the steward's Linux run changed the test VM clock with `direct_vm.warp(...)` while contract code continued to observe the deployment timestamp. This explains both observed results: the original expiry check returned `satisfied: true`, and the first correction failed its hard-coded issued-at assertion.
 
 ## Correction
 
-`test_expired_assessment_fails_without_mutating_history` now pins time immediately before `assess_application`, asserts the stored issue and expiry timestamps, moves chain time to exactly one second after expiry, asserts the complete policy payload, and confirms that the read does not mutate historical status.
+The direct-mode compatibility helper now synchronizes contract-visible datetime after every `direct_vm.warp(...)` on every operating system; only the file-descriptor workaround remains Windows-specific. The regression no longer asserts a runner-specific issue timestamp. It reads the issue timestamp actually persisted by the contract, proves `expires_at_unix == issued_at_unix + 2592000`, advances chain time to the derived `expires_at_unix + 1`, asserts the complete policy payload, and confirms that the read does not mutate historical status.
 
-The deterministic values are:
+The reference run produced:
 
 | Value | ISO-8601 | Unix seconds |
 | --- | --- | ---: |
@@ -45,7 +45,9 @@ The assessment status after the view remains `ACTIVE`; expiry affects policy eli
 
 ## Verification
 
-The corrected regression passes, and the complete 12-test direct suite passes. GenVM lint also passes all checks and validates the 25-method `AuditMatch` schema.
+The corrected regression passes on Windows and is also run by the public GitHub Actions workflow on Ubuntu Linux. The workflow then runs the complete 12-test direct suite, GenVM lint, all frontend/release tests, type checking, and the production build. The workflow summary publishes the exact expiry evidence payload from its Linux run.
+
+- Public verification workflow: https://github.com/sanity456/auditmatch/actions/workflows/verification.yml
 
 The contract source was not changed, so no replacement deployment was necessary. A fresh read-only deployment verification confirmed that the submitted StudioNet deployment is finalized, executed successfully, exposes the same 25-method schema, and has the same source as this repository:
 
