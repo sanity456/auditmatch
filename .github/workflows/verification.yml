@@ -48,3 +48,32 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run verify
+
+  submitted-deployment:
+    name: Submitted StudioNet deployment proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Verify finalized deployment, schema, and source hash
+        run: |
+          for attempt in 1 2 3; do
+            if npm run verify:deployment | tee deployment-verification.log; then
+              {
+                echo "## Submitted StudioNet deployment"
+                echo '```text'
+                cat deployment-verification.log
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep "$((attempt * 15))"
+            fi
+          done
+          exit 1
